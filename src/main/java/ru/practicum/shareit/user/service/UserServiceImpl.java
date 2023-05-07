@@ -61,10 +61,7 @@ public class UserServiceImpl implements UserService {
     }
 
     private void checkingId(long id) {
-        if (userRepository.getAll().stream()
-                .map(UserMapper::toUserDto)
-                .map(UserDto::getId)
-                .noneMatch(x -> x.equals(id))) {
+        if (userRepository.getById(id) == null) {
             throw new EntityNotFoundException("There is no User with id: " + id);
         }
     }
