@@ -8,11 +8,11 @@ public interface UserRepository {
 
     User create(User user);
 
-    User getById(int id);
+    User getById(long id);
 
     Collection<User> getAll();
 
     User update(User user);
 
-    void delete(int id);
+    void delete(long id);
 }
