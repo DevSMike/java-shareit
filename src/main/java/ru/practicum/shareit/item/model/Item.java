@@ -9,11 +9,11 @@ import ru.practicum.shareit.user.model.User;
 @Builder
 public class Item {
 
-    private int id;
-    private  String name;
-    private  String description;
-    private Boolean available;
-    private ItemRequest request;
-    private User owner;
+    long id;
+    String name;
+    String description;
+    Boolean available;
+    ItemRequest request;
+    User owner;
 
 }

@@ -8,9 +8,9 @@ import java.time.LocalDateTime;
 @Data
 public class ItemRequest {
 
-    private int id;
-    private final String description;
-    private final User requestor;
-    private final LocalDateTime createdTime;
+    long id;
+    String description;
+    User requestor;
+    LocalDateTime createdTime;
 
 }

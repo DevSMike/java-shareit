@@ -24,14 +24,14 @@ public class ItemController {
     }
 
     @PatchMapping("/{itemId}")
-    public ItemDto updateItem(@PathVariable int itemId, @RequestBody ItemDto itemDto, HttpServletRequest request) {
+    public ItemDto updateItem(@PathVariable long itemId, @RequestBody ItemDto itemDto, HttpServletRequest request) {
         log.debug("Updating item element by id {}", itemId);
         itemDto.setId(itemId);
         return itemService.update(itemDto, request.getIntHeader("X-Sharer-User-Id"));
     }
 
     @GetMapping("/{itemId}")
-    public ItemDto getItemById(@PathVariable int itemId, HttpServletRequest request) {
+    public ItemDto getItemById(@PathVariable long itemId, HttpServletRequest request) {
         log.debug("Getting item by id : {}", itemId);
         return itemService.getItemById(itemId, request.getIntHeader("X-Sharer-User-Id"));
     }
