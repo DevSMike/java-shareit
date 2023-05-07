@@ -17,12 +17,12 @@ import java.util.stream.IntStream;
 public class ItemRepositoryInMemoryImpl implements ItemRepository {
 
     private final UserRepository userRepository;
-    private final Map<Integer, List<Item>> items = new HashMap<>();
+    private final Map<Long, List<Item>> items = new HashMap<>();
     private int itemId = 0;
 
 
     @Override
-    public Item create(Item item, int userId) {
+    public Item create(Item item, long userId) {
         item.setId(++itemId);
         item.setOwner((userRepository.getById(userId)));
         items.compute(userId, (ownerId, userItems) -> {
@@ -38,7 +38,7 @@ public class ItemRepositoryInMemoryImpl implements ItemRepository {
     }
 
     @Override
-    public Item update(Item item, int userId) {
+    public Item update(Item item, long userId) {
         log.debug("Updating item : {}", item);
         if (userId != item.getOwner().getId()) {
             throw new EntityNotFoundException("Owner id is incorrect!");
@@ -50,24 +50,24 @@ public class ItemRepositoryInMemoryImpl implements ItemRepository {
     }
 
     @Override
-    public Item getItemById(int itemId) {
+    public Item getItemById(long itemId) {
         log.debug("Getting item by id: {} ", itemId);
         Item item = null;
-        for (int userId : items.keySet()) {
+        for (long userId : items.keySet()) {
             item = items.get(userId).stream().filter(x -> x.getId() == itemId).findFirst().orElse(null);
         }
         return item;
     }
 
     @Override
-    public Collection<Item> getItemsByUserId(int userId) {
+    public Collection<Item> getItemsByUserId(long userId) {
         return items.get(userId);
     }
 
     @Override
     public Collection<Item> getItemsBySearch(String text) {
         Collection<Item> availableItems = new ArrayList<>();
-        for (int userId : items.keySet()) {
+        for (long userId : items.keySet()) {
             availableItems.addAll(items.get(userId).stream()
                     .filter(x -> x.getAvailable().equals(true))
                     .filter(x -> x.getDescription().toLowerCase().contains(text))
@@ -76,7 +76,7 @@ public class ItemRepositoryInMemoryImpl implements ItemRepository {
         return availableItems;
     }
 
-    private int findItemIndexInList(int itemId, int userId) {
+    private int findItemIndexInList(long itemId, long userId) {
         return IntStream.range(0, items.get(userId).size())
                 .filter(i -> items.get(userId).get(i).getId() == itemId)
                 .findFirst()

@@ -6,13 +6,13 @@ import java.util.Collection;
 
 public interface ItemRepository {
 
-    Item create(Item item, int userId);
+    Item create(Item item, long userId);
 
-    Item update(Item item, int userId);
+    Item update(Item item, long userId);
 
-    Item getItemById(int itemId);
+    Item getItemById(long itemId);
 
-    Collection<Item> getItemsByUserId(int userId);
+    Collection<Item> getItemsByUserId(long userId);
 
     Collection<Item> getItemsBySearch(String text);
 }

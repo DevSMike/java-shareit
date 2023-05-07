@@ -27,7 +27,7 @@ public class ItemServiceImpl implements ItemService {
     private final ItemRepository itemRepository;
 
     @Override
-    public ItemDto create(ItemDto itemDto, int userId) {
+    public ItemDto create(ItemDto itemDto, long userId) {
         checkingUserId(userId);
         if (itemDto.getAvailable() == null || itemDto.getDescription() == null || itemDto.getName() == null) {
             throw new EmptyFieldException("Null fields in ItemDto element!");
@@ -40,7 +40,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public ItemDto update(ItemDto itemDto, int userId) {
+    public ItemDto update(ItemDto itemDto, long userId) {
         checkingUserId(userId);
         checkingItemId(itemDto.getId());
         log.debug("Updating item element : {}; for user {}", itemDto, userId);
@@ -49,7 +49,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public ItemDto getItemById(int itemId, int userId) {
+    public ItemDto getItemById(long itemId, long userId) {
         checkingUserId(userId);
         checkingItemId(itemId);
         log.debug("Getting item element by id : {}; for user {}", itemId, userId);
@@ -57,7 +57,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public Collection<ItemDto> getItemsByUserId(int userId) {
+    public Collection<ItemDto> getItemsByUserId(long userId) {
         checkingUserId(userId);
         log.debug("Getting items by user Id : {} ", userId);
         return itemRepository.getItemsByUserId(userId).stream()
@@ -76,7 +76,7 @@ public class ItemServiceImpl implements ItemService {
                 .collect(Collectors.toList());
     }
 
-    private void checkingUserId(int userId) {
+    private void checkingUserId(long userId) {
         if (userId == -1) {
             throw new GatewayHeaderException("There is no user with header-Id : " + userId);
         }
@@ -85,7 +85,7 @@ public class ItemServiceImpl implements ItemService {
         }
     }
 
-    private void checkingItemId(int itemId) {
+    private void checkingItemId(long itemId) {
         if (itemRepository.getItemById(itemId) == null) {
             throw new EntityNotFoundException("There is no Item with Id: " + itemId);
         }
