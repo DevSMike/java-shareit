@@ -1,17 +1,17 @@
 package ru.practicum.shareit.request.dto;
 
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.RequiredArgsConstructor;
 import ru.practicum.shareit.user.model.User;
 
 import java.time.LocalDateTime;
 
-@RequiredArgsConstructor
+@AllArgsConstructor
 @Builder
 public class ItemRequestDto {
 
-    final String description;
-    final User requestor;
-    final LocalDateTime createdTime;
+    private String description;
+    private User requestor;
+    private LocalDateTime createdTime;
 }
