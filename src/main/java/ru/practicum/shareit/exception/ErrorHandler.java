@@ -5,6 +5,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.util.Map;
+
 
 @RestControllerAdvice()
 public class ErrorHandler {
@@ -29,7 +31,13 @@ public class ErrorHandler {
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public String handleGatewayHeaderException(GatewayHeaderException e) {
+    public String handleGatewayHeaderException(IncorrectDataException e) {
         return String.format("Gateway exception %s", e.getMessage());
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String,String> handleUnsupportedStateException(UnsupportedStatusException e) {
+        return Map.of("error",  "Unknown state: " + e.getMessage());
     }
 }
