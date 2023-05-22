@@ -1,6 +1,5 @@
 package ru.practicum.shareit.user.service.db;
 
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -64,10 +63,4 @@ public class UserServiceImpl implements UserService {
         log.debug("Deleting user by id: {}", id);
         userRepository.deleteById(userFromDb.getId());
     }
-
-//    private void checkingId(long id) {
-//        if (userRepository.findById(id).orElse(null) == null) {
-//            throw ;
-//        }
-//    }
 }

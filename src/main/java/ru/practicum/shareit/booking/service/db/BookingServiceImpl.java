@@ -59,7 +59,7 @@ public class BookingServiceImpl implements BookingService {
         BookingDto bookingDto = toBookingDto(bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new EntityNotFoundException("There is no Booking with Id: " + bookingId)));
         checkingUserId(ownerId);
-        ItemDto owner = itemService.checkItemOwner(bookingDto.getItem().getId(), ownerId);
+        itemService.checkItemOwner(bookingDto.getItem().getId(), ownerId);
         switch (approve.toLowerCase()) {
             case "true": {
                 if (bookingDto.getStatus().equals(BookingStatus.APPROVED)) {

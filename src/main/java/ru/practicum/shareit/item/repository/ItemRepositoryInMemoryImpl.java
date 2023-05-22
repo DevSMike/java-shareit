@@ -20,7 +20,6 @@ public class ItemRepositoryInMemoryImpl implements ItemRepository {
     private final Map<Long, List<Item>> items = new HashMap<>();
     private int itemId = 0;
 
-
     @Override
     public Item create(Item item, long userId) {
         item.setId(++itemId);

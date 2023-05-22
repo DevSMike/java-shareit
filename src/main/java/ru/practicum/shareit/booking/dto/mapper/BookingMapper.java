@@ -15,7 +15,6 @@ import static ru.practicum.shareit.user.dto.mapper.UserMapper.toUserDto;
 
 public class BookingMapper {
 
-
     public static BookingDto toBookingDto(Booking booking) {
         BookingDto bookingDto = BookingDto.builder()
                 .id(booking.getId())
