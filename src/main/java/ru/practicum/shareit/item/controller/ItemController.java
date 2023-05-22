@@ -4,9 +4,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.dto.comment.CommentDto;
 import ru.practicum.shareit.item.service.ItemService;
 
 import javax.servlet.http.HttpServletRequest;
+import java.time.LocalDateTime;
 import java.util.Collection;
 
 @RestController
@@ -46,5 +48,12 @@ public class ItemController {
     public Collection<ItemDto> getItemsBySearch(@RequestParam String text) {
         log.debug("Getting items by search text: {}", text);
         return itemService.getItemsBySearch(text);
+    }
+
+    @PostMapping("/{itemId}/comment")
+    public CommentDto createCommentToItem(@PathVariable Long itemId, @RequestBody CommentDto comment, HttpServletRequest request) {
+        log.debug("Creating comment to item by userId {}", request.getIntHeader("X-Sharer-User-Id"));
+        comment.setCreated(LocalDateTime.now());
+        return itemService.addCommentToItem((long) request.getIntHeader("X-Sharer-User-Id"), itemId, comment);
     }
 }
