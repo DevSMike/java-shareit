@@ -1,4 +1,4 @@
-package ru.practicum.shareit.item.service.db;
+package ru.practicum.shareit.item.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -6,7 +6,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.mapper.BookingMapper;
-import ru.practicum.shareit.booking.repository.BookingRepositoryDb;
+import ru.practicum.shareit.booking.repository.BookingRepository;
 import ru.practicum.shareit.exception.EmptyFieldException;
 import ru.practicum.shareit.exception.EntityNotFoundException;
 
@@ -16,32 +16,30 @@ import ru.practicum.shareit.item.dto.comment.CommentDto;
 import ru.practicum.shareit.item.dto.comment.CommentMapper;
 import ru.practicum.shareit.item.dto.mapper.ItemMapper;
 import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.item.repository.CommentRepositoryDb;
-import ru.practicum.shareit.item.repository.ItemRepositoryDb;
-import ru.practicum.shareit.item.service.ItemService;
+import ru.practicum.shareit.item.repository.CommentRepository;
+import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.user.dto.UserDto;
-import ru.practicum.shareit.user.service.UserService;
+import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static ru.practicum.shareit.item.dto.comment.CommentMapper.toCommentDto;
 import static ru.practicum.shareit.item.dto.mapper.ItemMapper.*;
 import static ru.practicum.shareit.item.dto.mapper.ItemMapper.toItemDto;
 import static ru.practicum.shareit.user.dto.mapper.UserMapper.toUser;
+import static ru.practicum.shareit.user.dto.mapper.UserMapper.toUserDto;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class ItemServiceImpl implements ItemService {
+public class ItemServiceDbImpl implements ItemService {
 
-    private final UserService userService;
-    private final ItemRepositoryDb itemRepository;
-    private final BookingRepositoryDb bookingRepository;
-    private final CommentRepositoryDb commentRepository;
+    private final UserRepository userRepository;
+    private final ItemRepository itemRepository;
+    private final BookingRepository bookingRepository;
+    private final CommentRepository commentRepository;
 
 
     @Override
@@ -70,79 +68,59 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public ItemDto getItemById(long itemId, long userId) {
-        UserDto userFromDb = checkingUserId(userId);
+        checkingUserId(userId);
         List<CommentDto> commentsForItem = commentRepository.findAllByItem_Id(itemId)
                 .stream()
                 .map(CommentMapper::toCommentDto)
                 .collect(Collectors.toList());
-        try {
-            checkItemOwner(itemId, userId);
-            List<BookingDto> ownerBooking = getOwnerBooking(userId)
-                    .stream()
-                    .filter(x -> x.getItem().getId().equals(itemId))
-                    .collect(Collectors.toList());
-            if (ownerBooking.isEmpty()) {
-                throw new EntityNotFoundException("Owner Booking is null!");
-            }
-            if (!commentsForItem.isEmpty()) {
-                return toItemDtoWithBookingsAndComments(itemRepository.findById(itemId)
-                        .orElseThrow(() -> new EntityNotFoundException("There is no Item with Id: " + itemId)), ownerBooking, commentsForItem);
-            }
+        List<BookingDto> bookingsForItem = getOwnerBooking(userId)
+                .stream()
+                .filter(x -> x.getItem().getId().equals(itemId))
+                .collect(Collectors.toList());
+
+        if (!bookingsForItem.isEmpty() && !commentsForItem.isEmpty()) {
+            return toItemDtoWithBookingsAndComments(itemRepository.findById(itemId)
+                    .orElseThrow(() -> new EntityNotFoundException("There is no Item with Id: " + itemId)), bookingsForItem, commentsForItem);
+        } else if (!bookingsForItem.isEmpty()) {
             return toItemDtoWithBookings(itemRepository.findById(itemId)
-                    .orElseThrow(() -> new EntityNotFoundException("There is no Item with Id: " + itemId)), ownerBooking);
-        } catch (EntityNotFoundException e) {
-            log.info("Only owner can get info with bookings!");
-        }
-        log.debug("Getting item element by id : {}; for user {}", itemId, userFromDb.getId());
-        if (!commentsForItem.isEmpty()) {
+                    .orElseThrow(() -> new EntityNotFoundException("There is no Item with Id: " + itemId)), bookingsForItem);
+        } else if (!commentsForItem.isEmpty()) {
             return toItemDtoWithComments(itemRepository.findById(itemId)
                     .orElseThrow(() -> new EntityNotFoundException("There is no Item with Id: " + itemId)), commentsForItem);
+        } else {
+            return toItemDto(itemRepository.findById(itemId)
+                    .orElseThrow(() -> new EntityNotFoundException("There is no Item with Id: " + itemId)));
         }
-        return toItemDto(itemRepository.findById(itemId)
-                .orElseThrow(() -> new EntityNotFoundException("There is no Item with Id: " + itemId)));
     }
 
     @Override
     public Collection<ItemDto> getItemsByUserId(long userId) {
         UserDto userFromDb = checkingUserId(userId);
-        List<CommentDto> commentsForItem = commentRepository.findAllByItemsUserId(userId)
-                .stream()
-                .map(CommentMapper::toCommentDto)
-                .collect(Collectors.toList());
-        log.debug("Getting items by user Id : {} ", userFromDb.getId());
-        List<BookingDto> ownerBookings = getOwnerBooking(userId);
-        if (ownerBookings.isEmpty()) {
-            if (!commentsForItem.isEmpty()) {
-                return itemRepository.findByOwner_Id(userFromDb.getId(), Sort.by(Sort.Direction.ASC, "id"))
-                        .stream()
-                        .map(x -> toItemDtoWithComments(x, commentsForItem.stream()
-                                .filter(y -> y.getItem().getId().equals(x.getId()))
-                                .collect(Collectors.toList())))
-                        .collect(Collectors.toList());
-            }
-            return itemRepository.findByOwner_Id(userFromDb.getId(), Sort.by(Sort.Direction.ASC, "id"))
-                    .stream()
-                    .map(ItemMapper::toItemDto)
-                    .collect(Collectors.toList());
-        } else {
-            if (!commentsForItem.isEmpty()) {
-                return itemRepository.findByOwner_Id(userFromDb.getId(), Sort.by(Sort.Direction.ASC, "id"))
-                        .stream()
-                        .map(x -> toItemDtoWithBookingsAndComments(x, ownerBookings.stream()
-                                .filter(y -> y.getItem().getId().equals(x.getId()))
-                                .collect(Collectors.toList()), commentsForItem.stream()
-                                .filter(z -> z.getItem().getId().equals(x.getId()))
-                                .collect(Collectors.toList())))
-                        .collect(Collectors.toList());
-            }
-            return itemRepository.findByOwner_Id(userFromDb.getId(), Sort.by(Sort.Direction.ASC, "id"))
-                    .stream()
-                    .map(x -> toItemDtoWithBookings(x, ownerBookings.stream()
-                            .filter(y -> y.getItem().getId().equals(x.getId()))
-                            .collect(Collectors.toList())))
-                    .collect(Collectors.toList());
+
+        List<Item> userItems = new ArrayList<>(itemRepository.findByOwner_Id(userFromDb.getId(), Sort.by(Sort.Direction.ASC, "id")));
+        List<CommentDto> commentsToUserItems = commentRepository.findAllByItemsUserId(userId, Sort.by(Sort.Direction.DESC, "created"))
+                .stream().map(CommentMapper::toCommentDto).collect(Collectors.toList());
+        List<BookingDto> bookingsToUserItems = getOwnerBooking(userId);
+
+        Map<Item, List<BookingDto>> itemsWithBookingsMap = new HashMap<>();
+        Map<Item, List<CommentDto>> itemsWithCommentsMap = new HashMap<>();
+
+        for (Item i : userItems) {
+            itemsWithCommentsMap.put(i, commentsToUserItems.stream()
+                    .filter(c -> c.getItem().getId().equals(i.getId()))
+                    .collect(Collectors.toList()));
+            itemsWithBookingsMap.put(i, bookingsToUserItems.stream()
+                    .filter(b -> b.getItem().getId().equals(i.getId()))
+                    .collect(Collectors.toList()));
         }
 
+        log.debug("Getting items by user Id : {} ", userFromDb.getId());
+        List<ItemDto> results = new ArrayList<>();
+        for (Item i : userItems) {
+            results.add(toItemDtoWithBookingsAndComments(i, itemsWithBookingsMap.get(i), itemsWithCommentsMap.get(i)));
+        }
+
+        return results;
     }
 
     @Override
@@ -158,13 +136,11 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public ItemDto checkItemOwner(Long itemId, Long ownerId) {
-        long realOwnerId = itemRepository.findById(itemId)
-                .orElseThrow(() -> new EntityNotFoundException("There is no Item with Id: " + itemId)).getOwner().getId();
-        if (ownerId.equals(realOwnerId)) {
-            return toItemDto(itemRepository.findById(itemId).get());
-        } else {
-            throw new EntityNotFoundException("This user is not owner!");
+        ItemDto itemDto = toItemDto(itemRepository.findById(itemId).get());
+        if (!Objects.equals(itemDto.getOwnerId(), ownerId)) {
+            throw new EntityNotFoundException("User with id: " + ownerId + " is not owner");
         }
+        return itemDto;
     }
 
     @Override
@@ -189,11 +165,11 @@ public class ItemServiceImpl implements ItemService {
         if (userId == -1) {
             throw new IncorrectDataException("There is no user with header-Id : " + userId);
         }
-        return userService.getById(userId);
+        return toUserDto(userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("There is no user : " + userId)));
     }
 
     private List<BookingDto> getOwnerBooking(Long ownerId) {
-        return bookingRepository.findAllByOwnerId(ownerId)
+        return bookingRepository.findAllByItem_Owner_Id(ownerId)
                 .stream()
                 .map(BookingMapper::toBookingDto)
                 .collect(Collectors.toList());

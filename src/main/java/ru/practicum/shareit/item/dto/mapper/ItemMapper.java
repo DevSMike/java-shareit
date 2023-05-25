@@ -88,7 +88,12 @@ public class ItemMapper {
 
 
     public static ItemDto toItemDtoWithBookingsAndComments(Item item, List<BookingDto> bookings, List<CommentDto> comments) {
-        ItemDto itemDto = toItemDtoWithBookings(item, bookings);
+        ItemDto itemDto = null;
+        if (bookings == null) {
+            itemDto = toItemDto(item);
+        } else {
+            itemDto = toItemDtoWithBookings(item, bookings);
+        }
         itemDto.setComments(comments);
         return itemDto;
     }
