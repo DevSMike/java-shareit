@@ -13,19 +13,16 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
-public interface BookingRepositoryDb extends JpaRepository<Booking, Long> {
+public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     @Modifying
     @Transactional
     @Query("update Booking b set b.status = ?1 where b.id = ?2")
     void updateStatus(BookingStatus status, Long id);
 
-    List<Booking> findAllByItem_Id(Long itemId);
-
     List<Booking> findAllByBooker_Id(Long bookerId, Sort sort);
 
-    @Query("select b from Booking b where b.item.owner.id = :ownerId")
-    List<Booking> findAllByOwnerId(Long ownerId);
+    List<Booking> findAllByItem_Owner_Id(Long ownerId);
 
     @Query("select b from Booking b where b.item.id = :itemId AND b.booker.id = :bookerId AND b.end <= :now")
     List<Booking> findAllByUserIdAndItemIdAndEndDateIsPassed(Long bookerId, Long itemId, LocalDateTime now);

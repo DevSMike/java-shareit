@@ -25,6 +25,7 @@ public class BookingMapper {
         if (booking.getItem() != null) {
             ItemDto itemDto = toItemDto(booking.getItem());
             bookingDto.setItem(itemDto);
+            bookingDto.setItemId(itemDto.getId());
         }
         if (booking.getBooker() != null) {
             UserDto bookerDto = toUserDto(booking.getBooker());
