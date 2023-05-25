@@ -1,18 +1,18 @@
 package ru.practicum.shareit.user.repository;
 
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
 import ru.practicum.shareit.user.model.User;
 
-import java.util.Collection;
+import javax.transaction.Transactional;
 
-public interface UserRepository {
+@Repository
+public interface UserRepository extends JpaRepository<User, Long> {
 
-    User create(User user);
-
-    User getById(long id);
-
-    Collection<User> getAll();
-
-    User update(User user);
-
-    void delete(long id);
+    @Modifying
+    @Transactional
+    @Query("update User u set u.name = ?1, u.email =?2 where u.id = ?3")
+    void update(String name, String email, Long id);
 }
