@@ -52,7 +52,7 @@ public class UserServiceDbImpl implements UserService {
         log.debug("Updating user: {}", userDto);
         User userToUpdate = toUserUpdate(userDto, userRepository.findById(userDto.getId())
                 .orElseThrow(() -> new EntityNotFoundException("There is no User with id: " + userDto.getId())));
-        userRepository.update(userToUpdate.getName(), userToUpdate.getEmail(), userToUpdate.getId());
+        userRepository.save(userToUpdate);
         return toUserDto(userToUpdate);
     }
 

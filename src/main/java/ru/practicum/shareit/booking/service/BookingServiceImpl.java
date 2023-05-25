@@ -84,9 +84,9 @@ public class BookingServiceImpl implements BookingService {
             default:
                 throw new IncorrectDataException("Incorrect data in approve method");
         }
-        Booking updateBooking = toBookingUpdate(bookingDto, bookingRepository.findById(bookingId).get());
-        bookingRepository.updateStatus(updateBooking.getStatus(), updateBooking.getId());
-        return toBookingDto(updateBooking);
+        Booking bookingToUpdate = toBookingUpdate(bookingDto, bookingRepository.findById(bookingId).get());
+        bookingRepository.save(bookingToUpdate);
+        return toBookingDto(bookingToUpdate);
     }
 
     @Override

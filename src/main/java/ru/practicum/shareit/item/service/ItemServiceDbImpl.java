@@ -61,8 +61,7 @@ public class ItemServiceDbImpl implements ItemService {
         log.debug("Updating item element : {}; for user {}", itemDto, userId);
         Item itemToUpdate = toItemUpdate(itemDto, itemRepository.findById(itemDto.getId())
                 .orElseThrow(() -> new EntityNotFoundException("There is no Item with Id: " + itemDto.getId())));
-        itemRepository.update(itemToUpdate.getName(), itemToUpdate.getDescription(),
-                itemToUpdate.getAvailable(), itemToUpdate.getId());
+        itemRepository.save(itemToUpdate);
         return toItemDto(itemToUpdate);
     }
 
