@@ -7,10 +7,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.service.BookingService;
-import ru.practicum.shareit.validator.PageableValidator;
+import ru.practicum.shareit.validator.BookingValidator;
+import ru.practicum.shareit.validator.UserValidator;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+
+import static ru.practicum.shareit.validator.PageableValidator.checkingPageableParams;
 
 @RestController
 @RequestMapping(path = "/bookings")
@@ -18,16 +21,21 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BookingController {
 
+    private final UserValidator userValidator;
+    private final BookingValidator bookingValidator;
     private final BookingService bookingService;
 
     @PostMapping
     public BookingDto createBooking(@RequestBody BookingDto bookingDto, HttpServletRequest request) {
+        userValidator.validateUserId(request.getIntHeader("X-Sharer-User-Id"));
         log.info("Creating a booking : {}", bookingDto);
         return bookingService.addBooking(bookingDto, Long.valueOf(request.getHeader("X-Sharer-User-Id")));
     }
 
     @PatchMapping("/{bookingId}")
     public BookingDto approveBooking(@PathVariable Long bookingId, @RequestParam String approved, HttpServletRequest request) {
+        userValidator.validateUserId(request.getIntHeader("X-Sharer-User-Id"));
+        bookingValidator.validateBookingId(bookingId);
         log.info("Make approve status to booking: {}, status: {}", bookingId, approved);
         return bookingService.approveBooking(bookingId, Long.valueOf(request.getHeader("X-Sharer-User-Id")), approved);
     }
@@ -37,10 +45,12 @@ public class BookingController {
                                                   @RequestParam(defaultValue = "0") Integer from,
                                                   @RequestParam(defaultValue = "10") Integer size,
                                                   HttpServletRequest request) {
+        userValidator.validateUserId(request.getIntHeader("X-Sharer-User-Id"));
+        bookingValidator.validateBookingState(state);
+        checkingPageableParams(from, size);
         log.info("Getting info by user bookings");
-        PageableValidator.checkingPageableParams(from, size);
         Pageable page = PageRequest.of(from / size, size);
-        return bookingService.getAllBookingsByUserId(Long.valueOf(request.getHeader("X-Sharer-User-Id")), state, page);
+        return bookingService.getAllBookingsByUserId((long) request.getIntHeader("X-Sharer-User-Id"), state, page);
     }
 
     @GetMapping("/owner")
@@ -48,14 +58,18 @@ public class BookingController {
                                                    @RequestParam(defaultValue = "0") Integer from,
                                                    @RequestParam(defaultValue = "10") Integer size,
                                                    HttpServletRequest request) {
+        userValidator.validateUserId(request.getIntHeader("X-Sharer-User-Id"));
+        bookingValidator.validateBookingState(state);
+        checkingPageableParams(from, size);
         log.info("Getting info by owner bookings");
-        PageableValidator.checkingPageableParams(from, size);
         Pageable page = PageRequest.of(from / size, size);
-        return bookingService.getAllBookingsByOwnerId(Long.valueOf(request.getHeader("X-Sharer-User-Id")), state, page);
+        return bookingService.getAllBookingsByOwnerId((long) request.getIntHeader("X-Sharer-User-Id"), state, page);
     }
 
     @GetMapping("/{bookingId}")
     public BookingDto getInfoForBooking(@PathVariable Long bookingId, HttpServletRequest request) {
+        userValidator.validateUserId(request.getIntHeader("X-Sharer-User-Id"));
+        bookingValidator.validateBookingId(bookingId);
         log.info("Getting info for booking: {}", bookingId);
         return bookingService.getBookingInfo(bookingId, Long.valueOf(request.getHeader("X-Sharer-User-Id")));
     }

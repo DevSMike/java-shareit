@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.mapper.BookingMapper;
 import ru.practicum.shareit.booking.repository.BookingRepository;
-import ru.practicum.shareit.exception.EmptyFieldException;
 import ru.practicum.shareit.exception.EntityNotFoundException;
 
 import ru.practicum.shareit.exception.IncorrectDataException;
@@ -22,7 +21,7 @@ import ru.practicum.shareit.item.repository.CommentRepository;
 import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.request.repository.ItemRequestRepository;
-import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
@@ -32,8 +31,6 @@ import java.util.stream.Collectors;
 import static ru.practicum.shareit.item.dto.comment.CommentMapper.toCommentDto;
 import static ru.practicum.shareit.item.dto.mapper.ItemMapper.*;
 import static ru.practicum.shareit.item.dto.mapper.ItemMapper.toItemDto;
-import static ru.practicum.shareit.user.dto.mapper.UserMapper.toUser;
-import static ru.practicum.shareit.user.dto.mapper.UserMapper.toUserDto;
 
 @Service
 @Slf4j
@@ -49,35 +46,26 @@ public class ItemServiceDbImpl implements ItemService {
 
     @Override
     public ItemDto create(ItemDto itemDto, long userId) {
-        if (itemDto.getAvailable() == null || itemDto.getDescription() == null || itemDto.getName() == null) {
-            throw new EmptyFieldException("Null fields in ItemDto element!");
-        }
-        if (itemDto.getName().isEmpty() || itemDto.getDescription().isEmpty()) {
-            throw new EmptyFieldException("Empty fields in ItemDto element!");
-        }
-        UserDto userFromDb = checkingUserId(userId);
+        User userFromDb = userRepository.findById(userId).get();
         log.debug("Creating item element : {}; for user {}", itemDto, userId);
         if (itemDto.getRequestId() != null) {
             ItemRequest request = itemRequestRepository.findById(itemDto.getRequestId())
                     .orElseThrow(() -> new EntityNotFoundException("There is no item request with id: " + itemDto.getRequestId()));
-            return toItemDtoWithRequestId(itemRepository.save(toItemDbWithRequest(itemDto, toUser(userFromDb), request)));
+            return toItemDtoWithRequestId(itemRepository.save(toItemDbWithRequest(itemDto, userFromDb, request)));
         }
-        return toItemDto(itemRepository.save(toItemDb(itemDto, toUser(userFromDb))));
+        return toItemDto(itemRepository.save(toItemDb(itemDto, userFromDb)));
     }
 
     @Override
     public ItemDto update(ItemDto itemDto, long userId) {
-        checkingUserId(userId);
         log.debug("Updating item element : {}; for user {}", itemDto, userId);
-        Item itemToUpdate = toItemUpdate(itemDto, itemRepository.findById(itemDto.getId())
-                .orElseThrow(() -> new EntityNotFoundException("There is no Item with Id: " + itemDto.getId())));
+        Item itemToUpdate = toItemUpdate(itemDto, itemRepository.findById(itemDto.getId()).get());
         itemRepository.save(itemToUpdate);
         return toItemDto(itemToUpdate);
     }
 
     @Override
     public ItemDto getItemById(long itemId, long userId) {
-        checkingUserId(userId);
         List<CommentDto> commentsForItem = commentRepository.findAllByItem_Id(itemId)
                 .stream()
                 .map(CommentMapper::toCommentDto)
@@ -88,27 +76,22 @@ public class ItemServiceDbImpl implements ItemService {
                 .collect(Collectors.toList());
 
         if (!bookingsForItem.isEmpty() && !commentsForItem.isEmpty()) {
-            return toItemDtoWithBookingsAndComments(itemRepository.findById(itemId)
-                    .orElseThrow(() -> new EntityNotFoundException("There is no Item with Id: " + itemId)), bookingsForItem, commentsForItem);
+            return toItemDtoWithBookingsAndComments(itemRepository.findById(itemId).get(), bookingsForItem, commentsForItem);
         } else if (!bookingsForItem.isEmpty()) {
-            return toItemDtoWithBookings(itemRepository.findById(itemId)
-                    .orElseThrow(() -> new EntityNotFoundException("There is no Item with Id: " + itemId)), bookingsForItem);
+            return toItemDtoWithBookings(itemRepository.findById(itemId).get(), bookingsForItem);
         } else if (!commentsForItem.isEmpty()) {
-            return toItemDtoWithComments(itemRepository.findById(itemId)
-                    .orElseThrow(() -> new EntityNotFoundException("There is no Item with Id: " + itemId)), commentsForItem);
+            return toItemDtoWithComments(itemRepository.findById(itemId).get(), commentsForItem);
         } else {
-            return toItemDto(itemRepository.findById(itemId)
-                    .orElseThrow(() -> new EntityNotFoundException("There is no Item with Id: " + itemId)));
+            return toItemDto(itemRepository.findById(itemId).get());
         }
     }
 
     @Override
     public Collection<ItemDto> getItemsByUserId(long userId, Pageable page) {
-        UserDto userFromDb = checkingUserId(userId);
         Pageable pageForItems = PageRequest.of(page.getPageNumber(), page.getPageSize(), Sort.by(Sort.Direction.ASC, "id"));
         Pageable pageForComments = PageRequest.of(page.getPageNumber(), page.getPageSize(), Sort.by(Sort.Direction.DESC, "created"));
 
-        List<Item> userItems = new ArrayList<>(itemRepository.findByOwner_Id(userFromDb.getId(), pageForItems));
+        List<Item> userItems = new ArrayList<>(itemRepository.findByOwner_Id(userId, pageForItems));
         List<CommentDto> commentsToUserItems = commentRepository.findAllByItemsUserId(userId, pageForComments)
                 .stream().map(CommentMapper::toCommentDto).collect(Collectors.toList());
         List<BookingDto> bookingsToUserItems = getOwnerBooking(userId);
@@ -125,7 +108,7 @@ public class ItemServiceDbImpl implements ItemService {
                     .collect(Collectors.toList()));
         }
 
-        log.debug("Getting items by user Id : {} ", userFromDb.getId());
+        log.debug("Getting items by user Id : {} ", userId);
         List<ItemDto> results = new ArrayList<>();
         for (Item i : userItems) {
             results.add(toItemDtoWithBookingsAndComments(i, itemsWithBookingsMap.get(i), itemsWithCommentsMap.get(i)));
@@ -156,10 +139,7 @@ public class ItemServiceDbImpl implements ItemService {
 
     @Override
     public CommentDto addCommentToItem(Long userId, Long itemId, CommentDto commentDto) {
-        if (commentDto.getText().isEmpty()) {
-            throw new IncorrectDataException("Comment text cant be empty!");
-        }
-        UserDto author = checkingUserId(userId);
+        User author = userRepository.findById(userId).get();
         List<BookingDto> bookings = bookingRepository.findAllByUserIdAndItemIdAndEndDateIsPassed(userId, itemId, LocalDateTime.now())
                 .stream()
                 .map(BookingMapper::toBookingDto)
@@ -168,16 +148,10 @@ public class ItemServiceDbImpl implements ItemService {
             throw new IncorrectDataException("This user has no booking");
         }
         ItemDto item = getItemById(itemId, userId);
-        commentDto = toCommentDto(commentRepository.save(CommentMapper.toCommentDb(commentDto, toUser(author), toItem(item))));
+        commentDto = toCommentDto(commentRepository.save(CommentMapper.toCommentDb(commentDto, author, toItem(item))));
         return commentDto;
     }
 
-    private UserDto checkingUserId(long userId) {
-        if (userId == -1) {
-            throw new IncorrectDataException("There is no user with header-Id : " + userId);
-        }
-        return toUserDto(userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("There is no user : " + userId)));
-    }
 
     private List<BookingDto> getOwnerBooking(Long ownerId) {
         return bookingRepository.findAllByItem_Owner_Id(ownerId)

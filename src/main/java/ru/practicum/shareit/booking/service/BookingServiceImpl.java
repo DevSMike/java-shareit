@@ -8,15 +8,13 @@ import org.springframework.stereotype.Service;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.mapper.BookingMapper;
 import ru.practicum.shareit.booking.model.Booking;
-import ru.practicum.shareit.booking.model.BookingState;
 import ru.practicum.shareit.booking.model.BookingStatus;
 import ru.practicum.shareit.booking.repository.BookingRepository;
 import ru.practicum.shareit.exception.EntityNotFoundException;
 import ru.practicum.shareit.exception.IncorrectDataException;
-import ru.practicum.shareit.exception.UnsupportedStatusException;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.ItemRepository;
-import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
@@ -26,8 +24,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static ru.practicum.shareit.booking.dto.mapper.BookingMapper.*;
-import static ru.practicum.shareit.user.dto.mapper.UserMapper.toUser;
-import static ru.practicum.shareit.user.dto.mapper.UserMapper.toUserDto;
 
 @Service
 @RequiredArgsConstructor
@@ -40,7 +36,7 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingDto addBooking(BookingDto bookingDto, Long bookerId) {
-        UserDto userFromDb = checkingUserId(bookerId);
+        User booker = userRepository.findById(bookerId).get();
         Item itemFromDb = itemRepository.findById(bookingDto.getItemId())
                 .orElseThrow(() -> new EntityNotFoundException("There is no Item with id " + bookingDto.getItemId()));
 
@@ -58,14 +54,12 @@ public class BookingServiceImpl implements BookingService {
             throw new IncorrectDataException("Booking: Problem in dates");
         }
         bookingDto.setStatus(BookingStatus.WAITING);
-        return toBookingDto(bookingRepository.save(toBookingDb(bookingDto, itemFromDb, toUser(userFromDb))));
+        return toBookingDto(bookingRepository.save(toBookingDb(bookingDto, itemFromDb, booker)));
     }
 
     @Override
     public BookingDto approveBooking(Long bookingId, Long ownerId, String approve) {
-        checkingUserId(ownerId);
-        BookingDto bookingDto = toBookingDto(bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new EntityNotFoundException("There is no Booking with Id: " + bookingId)));
+        BookingDto bookingDto = toBookingDto(bookingRepository.findById(bookingId).get());
 
         if (!Objects.equals(bookingDto.getItem().getOwnerId(), ownerId)) {
             throw new EntityNotFoundException("User with id = " + ownerId + " is not an owner!");
@@ -93,9 +87,7 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingDto getBookingInfo(Long bookingId, Long userId) {
-        checkingUserId(userId);
-        BookingDto bookingDto = toBookingDto(bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new EntityNotFoundException("There is no Booking with Id: " + bookingId)));
+        BookingDto bookingDto = toBookingDto(bookingRepository.findById(bookingId).get());
         if (!Objects.equals(bookingDto.getItem().getOwnerId(), userId) && !Objects.equals(bookingDto.getBooker().getId(), userId)) {
             throw new EntityNotFoundException("User with id = " + userId + " is not an owner!");
         }
@@ -104,8 +96,6 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public List<BookingDto> getAllBookingsByUserId(Long userId, String state, Pageable page) {
-        checkingUserId(userId);
-        checkingBookingState(state);
         Pageable pageForBookings = PageRequest.of(page.getPageNumber(), page.getPageSize(), SORT_BY_START_DESC);
         List<Booking> bookings;
         switch (state.toUpperCase()) {
@@ -141,8 +131,6 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public List<BookingDto> getAllBookingsByOwnerId(Long ownerId, String state, Pageable page) {
-        checkingUserId(ownerId);
-        checkingBookingState(state);
         Pageable pageForBookings = PageRequest.of(page.getPageNumber(), page.getPageSize(), SORT_BY_START_DESC);
 
         List<Long> userItemsIds = itemRepository.findByOwner_Id_WithoutPageable(ownerId).stream()
@@ -182,20 +170,4 @@ public class BookingServiceImpl implements BookingService {
         }
         return bookings.stream().map(BookingMapper::toBookingDto).collect(Collectors.toList());
     }
-
-    private UserDto checkingUserId(Long userId) {
-        if (userId == -1) {
-            throw new IncorrectDataException("There is no user with header-Id : " + userId);
-        }
-        return toUserDto(userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("There is no user with id: " + userId)));
-    }
-
-    private void checkingBookingState(String state) {
-        try {
-            BookingState.valueOf(state);
-        } catch (Exception e) {
-            throw new UnsupportedStatusException(state);
-        }
-    }
-
 }

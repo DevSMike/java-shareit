@@ -4,13 +4,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import ru.practicum.shareit.exception.EmptyFieldException;
-import ru.practicum.shareit.exception.EntityNotFoundException;
-import ru.practicum.shareit.exception.IncorrectDataException;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.comment.CommentDto;
 import ru.practicum.shareit.item.dto.mapper.ItemMapper;
 import ru.practicum.shareit.item.repository.inmemmory.ItemRepository;
-import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.service.UserService;
 
 import java.util.ArrayList;
@@ -28,7 +25,6 @@ public class ItemServiceInMemoryImpl implements ItemService {
 
     @Override
     public ItemDto create(ItemDto itemDto, long userId) {
-        checkingUserId(userId);
         if (itemDto.getAvailable() == null || itemDto.getDescription() == null || itemDto.getName() == null) {
             throw new EmptyFieldException("Null fields in ItemDto element!");
         }
@@ -41,8 +37,6 @@ public class ItemServiceInMemoryImpl implements ItemService {
 
     @Override
     public ItemDto update(ItemDto itemDto, long userId) {
-        checkingUserId(userId);
-        checkingItemId(itemDto.getId());
         log.debug("Updating item element : {}; for user {}", itemDto, userId);
         return toItemDto(itemRepository.update(toItemUpdate(itemDto, itemRepository
                 .getItemById(itemDto.getId())), userId));
@@ -50,15 +44,12 @@ public class ItemServiceInMemoryImpl implements ItemService {
 
     @Override
     public ItemDto getItemById(long itemId, long userId) {
-        checkingUserId(userId);
-        checkingItemId(itemId);
         log.debug("Getting item element by id : {}; for user {}", itemId, userId);
         return toItemDto(itemRepository.getItemById(itemId));
     }
 
     @Override
     public Collection<ItemDto> getItemsByUserId(long userId, Pageable page) {
-        checkingUserId(userId);
         log.debug("Getting items by user Id : {} ", userId);
         return itemRepository.getItemsByUserId(userId).stream()
                 .map(ItemMapper::toItemDto)
@@ -86,18 +77,4 @@ public class ItemServiceInMemoryImpl implements ItemService {
         return null;
     }
 
-    private void checkingUserId(long userId) {
-        if (userId == -1) {
-            throw new IncorrectDataException("There is no user with header-Id : " + userId);
-        }
-        if (userService.getAll().stream().map(UserDto::getId).noneMatch(x -> x.equals(userId))) {
-            throw new EntityNotFoundException("There is no user with Id : " + userId);
-        }
-    }
-
-    private void checkingItemId(long itemId) {
-        if (itemRepository.getItemById(itemId) == null) {
-            throw new EntityNotFoundException("There is no Item with Id: " + itemId);
-        }
-    }
 }

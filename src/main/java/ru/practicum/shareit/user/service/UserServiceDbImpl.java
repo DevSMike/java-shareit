@@ -3,8 +3,6 @@ package ru.practicum.shareit.user.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.practicum.shareit.exception.EmptyFieldException;
-import ru.practicum.shareit.exception.EntityNotFoundException;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.dto.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
@@ -24,9 +22,6 @@ public class UserServiceDbImpl implements UserService {
 
     @Override
     public UserDto create(UserDto userDto) {
-        if (userDto.getEmail() == null) {
-            throw new EmptyFieldException("Email is empty");
-        }
         log.debug("Creating user : {}", userDto);
         return toUserDto(userRepository.save(toUser(userDto)));
     }
@@ -34,8 +29,7 @@ public class UserServiceDbImpl implements UserService {
     @Override
     public UserDto getById(long id) {
         log.debug("Getting user by Id: {}", id);
-        User userFromRep = userRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("There is no User with id: " + id));
+        User userFromRep = userRepository.findById(id).get();
         return toUserDto(userFromRep);
     }
 
@@ -50,16 +44,14 @@ public class UserServiceDbImpl implements UserService {
     @Override
     public UserDto update(UserDto userDto) {
         log.debug("Updating user: {}", userDto);
-        User userToUpdate = toUserUpdate(userDto, userRepository.findById(userDto.getId())
-                .orElseThrow(() -> new EntityNotFoundException("There is no User with id: " + userDto.getId())));
+        User userToUpdate = toUserUpdate(userDto, userRepository.findById(userDto.getId()).get());
         userRepository.save(userToUpdate);
         return toUserDto(userToUpdate);
     }
 
     @Override
     public void delete(long id) {
-        User userFromDb = userRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("There is no User with id: " + id));
+        User userFromDb = userRepository.findById(id).get();
         log.debug("Deleting user by id: {}", id);
         userRepository.deleteById(userFromDb.getId());
     }
