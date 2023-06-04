@@ -2,6 +2,8 @@ package ru.practicum.shareit.item.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.booking.dto.BookingDto;
@@ -18,6 +20,8 @@ import ru.practicum.shareit.item.dto.mapper.ItemMapper;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.CommentRepository;
 import ru.practicum.shareit.item.repository.ItemRepository;
+import ru.practicum.shareit.request.model.ItemRequest;
+import ru.practicum.shareit.request.repository.ItemRequestRepository;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.repository.UserRepository;
 
@@ -40,6 +44,7 @@ public class ItemServiceDbImpl implements ItemService {
     private final ItemRepository itemRepository;
     private final BookingRepository bookingRepository;
     private final CommentRepository commentRepository;
+    private final ItemRequestRepository itemRequestRepository;
 
 
     @Override
@@ -52,6 +57,11 @@ public class ItemServiceDbImpl implements ItemService {
         }
         UserDto userFromDb = checkingUserId(userId);
         log.debug("Creating item element : {}; for user {}", itemDto, userId);
+        if (itemDto.getRequestId() != null) {
+            ItemRequest request = itemRequestRepository.findById(itemDto.getRequestId())
+                    .orElseThrow(() -> new EntityNotFoundException("There is no item request with id: " + itemDto.getRequestId()));
+            return toItemDtoWithRequestId(itemRepository.save(toItemDbWithRequest(itemDto, toUser(userFromDb), request)));
+        }
         return toItemDto(itemRepository.save(toItemDb(itemDto, toUser(userFromDb))));
     }
 
@@ -93,11 +103,13 @@ public class ItemServiceDbImpl implements ItemService {
     }
 
     @Override
-    public Collection<ItemDto> getItemsByUserId(long userId) {
+    public Collection<ItemDto> getItemsByUserId(long userId, Pageable page) {
         UserDto userFromDb = checkingUserId(userId);
+        Pageable pageForItems = PageRequest.of(page.getPageNumber(), page.getPageSize(), Sort.by(Sort.Direction.ASC, "id"));
+        Pageable pageForComments = PageRequest.of(page.getPageNumber(), page.getPageSize(), Sort.by(Sort.Direction.DESC, "created"));
 
-        List<Item> userItems = new ArrayList<>(itemRepository.findByOwner_Id(userFromDb.getId(), Sort.by(Sort.Direction.ASC, "id")));
-        List<CommentDto> commentsToUserItems = commentRepository.findAllByItemsUserId(userId, Sort.by(Sort.Direction.DESC, "created"))
+        List<Item> userItems = new ArrayList<>(itemRepository.findByOwner_Id(userFromDb.getId(), pageForItems));
+        List<CommentDto> commentsToUserItems = commentRepository.findAllByItemsUserId(userId, pageForComments)
                 .stream().map(CommentMapper::toCommentDto).collect(Collectors.toList());
         List<BookingDto> bookingsToUserItems = getOwnerBooking(userId);
 
@@ -123,12 +135,12 @@ public class ItemServiceDbImpl implements ItemService {
     }
 
     @Override
-    public Collection<ItemDto> getItemsBySearch(String text) {
+    public Collection<ItemDto> getItemsBySearch(String text, Pageable page) {
         if (text.isEmpty()) {
             return new ArrayList<>();
         }
         log.debug("Getting items by search : {} ", text);
-        return itemRepository.search(text).stream()
+        return itemRepository.search(text, page).stream()
                 .map(ItemMapper::toItemDto)
                 .collect(Collectors.toList());
     }

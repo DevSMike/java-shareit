@@ -2,10 +2,13 @@ package ru.practicum.shareit.item.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.comment.CommentDto;
 import ru.practicum.shareit.item.service.ItemService;
+import ru.practicum.shareit.validator.PageableValidator;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
@@ -39,15 +42,19 @@ public class ItemController {
     }
 
     @GetMapping()
-    public Collection<ItemDto> getUserItems(HttpServletRequest request) {
+    public Collection<ItemDto> getUserItems(@RequestParam(defaultValue = "0") Integer from, @RequestParam(defaultValue = "10") Integer size, HttpServletRequest request) {
         log.debug("Getting all items by userId {}", request.getIntHeader("X-Sharer-User-Id"));
-        return itemService.getItemsByUserId(request.getIntHeader("X-Sharer-User-Id"));
+        PageableValidator.checkingPageableParams(from, size);
+        Pageable page = PageRequest.of(from / size, size);
+        return itemService.getItemsByUserId(request.getIntHeader("X-Sharer-User-Id"), page);
     }
 
     @GetMapping("/search")
-    public Collection<ItemDto> getItemsBySearch(@RequestParam String text) {
+    public Collection<ItemDto> getItemsBySearch(@RequestParam(defaultValue = "0") Integer from, @RequestParam(defaultValue = "10") Integer size, @RequestParam String text) {
         log.debug("Getting items by search text: {}", text);
-        return itemService.getItemsBySearch(text);
+        PageableValidator.checkingPageableParams(from, size);
+        Pageable page = PageRequest.of(from / size, size);
+        return itemService.getItemsBySearch(text, page);
     }
 
     @PostMapping("/{itemId}/comment")

@@ -22,6 +22,7 @@ public class BookingMapper {
                 .end(booking.getEnd())
                 .status(booking.getStatus())
                 .build();
+
         if (booking.getItem() != null) {
             ItemDto itemDto = toItemDto(booking.getItem());
             bookingDto.setItem(itemDto);
