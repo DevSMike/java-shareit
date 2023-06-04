@@ -6,7 +6,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.service.UserService;
-import ru.practicum.shareit.validator.UserValidator;
 
 import javax.validation.Valid;
 import java.util.Collection;
@@ -19,7 +18,6 @@ import java.util.Collection;
 @RequestMapping(path = "/users")
 public class UserController {
 
-    private final UserValidator userValidator;
     private final UserService userService;
 
     @GetMapping()
@@ -30,21 +28,18 @@ public class UserController {
 
     @GetMapping("/{userId}")
     public UserDto getUserById(@PathVariable long userId) {
-        userValidator.validateUserId(userId);
         log.debug("Getting user by id: {}", userId);
         return userService.getById(userId);
     }
 
     @PostMapping()
     public UserDto createUser(@Valid @RequestBody UserDto userDto) {
-        userValidator.validateUserData(userDto);
         log.debug("Creating user: {}", userDto);
         return userService.create(userDto);
     }
 
     @PatchMapping("/{userId}")
     public UserDto updateUser(@PathVariable long userId, @Valid @RequestBody UserDto userDto) {
-        userValidator.validateUserId(userId);
         log.debug("Updating user by id: {}", userId);
         userDto.setId(userId);
         return userService.update(userDto);
@@ -52,7 +47,6 @@ public class UserController {
 
     @DeleteMapping("/{userId}")
     public void deleteUser(@PathVariable long userId) {
-        userValidator.validateUserId(userId);
         log.debug("Deleting user by id : {}", userId);
         userService.delete(userId);
     }

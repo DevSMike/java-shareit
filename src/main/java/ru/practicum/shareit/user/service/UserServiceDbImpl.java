@@ -12,6 +12,8 @@ import java.util.Collection;
 import java.util.stream.Collectors;
 
 import static ru.practicum.shareit.user.dto.mapper.UserMapper.*;
+import static ru.practicum.shareit.validator.UserValidator.validateUserData;
+import static ru.practicum.shareit.validator.UserValidator.validateUserIdAndReturn;
 
 @Service
 @Slf4j
@@ -23,13 +25,14 @@ public class UserServiceDbImpl implements UserService {
     @Override
     public UserDto create(UserDto userDto) {
         log.debug("Creating user : {}", userDto);
+        validateUserData(userDto);
         return toUserDto(userRepository.save(toUser(userDto)));
     }
 
     @Override
     public UserDto getById(long id) {
         log.debug("Getting user by Id: {}", id);
-        User userFromRep = userRepository.findById(id).get();
+        User userFromRep = validateUserIdAndReturn(id, userRepository);
         return toUserDto(userFromRep);
     }
 
@@ -44,14 +47,14 @@ public class UserServiceDbImpl implements UserService {
     @Override
     public UserDto update(UserDto userDto) {
         log.debug("Updating user: {}", userDto);
-        User userToUpdate = toUserUpdate(userDto, userRepository.findById(userDto.getId()).get());
+        User userToUpdate = toUserUpdate(userDto, validateUserIdAndReturn(userDto.getId(), userRepository));
         userRepository.save(userToUpdate);
         return toUserDto(userToUpdate);
     }
 
     @Override
     public void delete(long id) {
-        User userFromDb = userRepository.findById(id).get();
+        User userFromDb = validateUserIdAndReturn(id, userRepository);
         log.debug("Deleting user by id: {}", id);
         userRepository.deleteById(userFromDb.getId());
     }

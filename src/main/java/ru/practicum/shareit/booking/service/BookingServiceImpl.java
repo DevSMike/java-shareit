@@ -17,6 +17,7 @@ import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +25,11 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static ru.practicum.shareit.booking.dto.mapper.BookingMapper.*;
+import static ru.practicum.shareit.validator.BookingValidator.validateBookingIdAndReturns;
+import static ru.practicum.shareit.validator.BookingValidator.validateBookingState;
+import static ru.practicum.shareit.validator.ItemValidator.validateItemIdAndReturns;
+import static ru.practicum.shareit.validator.UserValidator.validateUserId;
+import static ru.practicum.shareit.validator.UserValidator.validateUserIdAndReturn;
 
 @Service
 @RequiredArgsConstructor
@@ -36,9 +42,8 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingDto addBooking(BookingDto bookingDto, Long bookerId) {
-        User booker = userRepository.findById(bookerId).get();
-        Item itemFromDb = itemRepository.findById(bookingDto.getItemId())
-                .orElseThrow(() -> new EntityNotFoundException("There is no Item with id " + bookingDto.getItemId()));
+        User booker = validateUserIdAndReturn(bookerId, userRepository);
+        Item itemFromDb = validateItemIdAndReturns(bookingDto.getItemId(), itemRepository);
 
         if (itemFromDb.getOwner().getId() == bookerId) {
             throw new EntityNotFoundException("Owner can't book his item");
@@ -59,8 +64,10 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingDto approveBooking(Long bookingId, Long ownerId, String approve) {
-        BookingDto bookingDto = toBookingDto(bookingRepository.findById(bookingId).get());
+        validateUserId(ownerId, userRepository);
+        Booking bookingFromDb = validateBookingIdAndReturns(bookingId, bookingRepository);
 
+        BookingDto bookingDto = toBookingDto(bookingFromDb);
         if (!Objects.equals(bookingDto.getItem().getOwnerId(), ownerId)) {
             throw new EntityNotFoundException("User with id = " + ownerId + " is not an owner!");
         }
@@ -80,14 +87,15 @@ public class BookingServiceImpl implements BookingService {
             default:
                 throw new IncorrectDataException("Incorrect data in approve method");
         }
-        Booking bookingToUpdate = toBookingUpdate(bookingDto, bookingRepository.findById(bookingId).get());
+        Booking bookingToUpdate = toBookingUpdate(bookingDto, bookingFromDb);
         bookingRepository.save(bookingToUpdate);
         return toBookingDto(bookingToUpdate);
     }
 
     @Override
     public BookingDto getBookingInfo(Long bookingId, Long userId) {
-        BookingDto bookingDto = toBookingDto(bookingRepository.findById(bookingId).get());
+        validateUserId(userId, userRepository);
+        BookingDto bookingDto = toBookingDto(validateBookingIdAndReturns(bookingId, bookingRepository));
         if (!Objects.equals(bookingDto.getItem().getOwnerId(), userId) && !Objects.equals(bookingDto.getBooker().getId(), userId)) {
             throw new EntityNotFoundException("User with id = " + userId + " is not an owner!");
         }
@@ -96,6 +104,9 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public List<BookingDto> getAllBookingsByUserId(Long userId, String state, Pageable page) {
+        validateUserId(userId, userRepository);
+        validateBookingState(state);
+
         Pageable pageForBookings = PageRequest.of(page.getPageNumber(), page.getPageSize(), SORT_BY_START_DESC);
         List<Booking> bookings;
         switch (state.toUpperCase()) {
@@ -131,6 +142,8 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public List<BookingDto> getAllBookingsByOwnerId(Long ownerId, String state, Pageable page) {
+        validateUserId(ownerId, userRepository);
+        validateBookingState(state);
         Pageable pageForBookings = PageRequest.of(page.getPageNumber(), page.getPageSize(), SORT_BY_START_DESC);
 
         List<Long> userItemsIds = itemRepository.findByOwner_Id_WithoutPageable(ownerId).stream()

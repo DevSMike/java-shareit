@@ -8,8 +8,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.request.dto.ItemRequestDto;
 import ru.practicum.shareit.request.service.ItemRequestService;
-import ru.practicum.shareit.validator.ItemRequestValidator;
-import ru.practicum.shareit.validator.UserValidator;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
@@ -23,15 +21,11 @@ import static ru.practicum.shareit.validator.PageableValidator.checkingPageableP
 @Slf4j
 public class ItemRequestController {
 
-    private final UserValidator userValidator;
-    private final ItemRequestValidator itemRequestValidator;
     private final ItemRequestService itemRequestService;
 
 
     @PostMapping
     public ItemRequestDto addNewRequest(@RequestBody ItemRequestDto requestDto, HttpServletRequest request) {
-        userValidator.validateUserId(request.getIntHeader("X-Sharer-User-Id"));
-        itemRequestValidator.validateItemRequestData(requestDto);
         log.debug("Creating item request element {}", requestDto);
         requestDto.setCreated(LocalDateTime.now());
         return itemRequestService.addNewRequest(requestDto, (long) request.getIntHeader("X-Sharer-User-Id"));
@@ -39,14 +33,12 @@ public class ItemRequestController {
 
     @GetMapping
     public Collection<ItemRequestDto> getAllUserItemsWithResponses(HttpServletRequest request) {
-        userValidator.validateUserId(request.getIntHeader("X-Sharer-User-Id"));
         log.debug("Getting collection of users' items requests");
         return itemRequestService.getAllUserRequestsWithResponses((long) request.getIntHeader("X-Sharer-User-Id"));
     }
 
     @GetMapping("/all")
     public Collection<ItemRequestDto> getAllCreatedRequests(@RequestParam(defaultValue = "0") Integer from, @RequestParam(defaultValue = "10") Integer size, HttpServletRequest request) {
-        userValidator.validateUserId(request.getIntHeader("X-Sharer-User-Id"));
         checkingPageableParams(from, size);
         log.debug("Getting collection of created requests");
         Pageable page = PageRequest.of(from, size, Sort.by("creationDate").descending());
@@ -55,8 +47,6 @@ public class ItemRequestController {
 
     @GetMapping("/{requestId}")
     public ItemRequestDto getRequestById(@PathVariable Long requestId, HttpServletRequest request) {
-        userValidator.validateUserId(request.getIntHeader("X-Sharer-User-Id"));
-        itemRequestValidator.validateItemRequestId(requestId);
         log.debug("Getting request by id: {}", requestId);
         return itemRequestService.getRequestById((long) request.getIntHeader("X-Sharer-User-Id"), requestId);
     }

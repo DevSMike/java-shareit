@@ -31,6 +31,9 @@ import java.util.stream.Collectors;
 import static ru.practicum.shareit.item.dto.comment.CommentMapper.toCommentDto;
 import static ru.practicum.shareit.item.dto.mapper.ItemMapper.*;
 import static ru.practicum.shareit.item.dto.mapper.ItemMapper.toItemDto;
+import static ru.practicum.shareit.validator.ItemValidator.*;
+import static ru.practicum.shareit.validator.UserValidator.validateUserId;
+import static ru.practicum.shareit.validator.UserValidator.validateUserIdAndReturn;
 
 @Service
 @Slf4j
@@ -46,8 +49,9 @@ public class ItemServiceDbImpl implements ItemService {
 
     @Override
     public ItemDto create(ItemDto itemDto, long userId) {
-        User userFromDb = userRepository.findById(userId).get();
         log.debug("Creating item element : {}; for user {}", itemDto, userId);
+        validateItemData(itemDto);
+        User userFromDb = validateUserIdAndReturn(userId, userRepository);
         if (itemDto.getRequestId() != null) {
             ItemRequest request = itemRequestRepository.findById(itemDto.getRequestId())
                     .orElseThrow(() -> new EntityNotFoundException("There is no item request with id: " + itemDto.getRequestId()));
@@ -59,13 +63,18 @@ public class ItemServiceDbImpl implements ItemService {
     @Override
     public ItemDto update(ItemDto itemDto, long userId) {
         log.debug("Updating item element : {}; for user {}", itemDto, userId);
-        Item itemToUpdate = toItemUpdate(itemDto, itemRepository.findById(itemDto.getId()).get());
+        validateUserId(userId, userRepository);
+        Item itemToUpdate = toItemUpdate(itemDto, validateItemIdAndReturns(itemDto.getId(), itemRepository));
         itemRepository.save(itemToUpdate);
         return toItemDto(itemToUpdate);
     }
 
     @Override
     public ItemDto getItemById(long itemId, long userId) {
+        log.debug("Getting item by id: {}", itemId);
+        validateUserId(userId, userRepository);
+        Item itemFromDb = validateItemIdAndReturns(itemId, itemRepository);
+
         List<CommentDto> commentsForItem = commentRepository.findAllByItem_Id(itemId)
                 .stream()
                 .map(CommentMapper::toCommentDto)
@@ -76,18 +85,20 @@ public class ItemServiceDbImpl implements ItemService {
                 .collect(Collectors.toList());
 
         if (!bookingsForItem.isEmpty() && !commentsForItem.isEmpty()) {
-            return toItemDtoWithBookingsAndComments(itemRepository.findById(itemId).get(), bookingsForItem, commentsForItem);
+            return toItemDtoWithBookingsAndComments(itemFromDb, bookingsForItem, commentsForItem);
         } else if (!bookingsForItem.isEmpty()) {
-            return toItemDtoWithBookings(itemRepository.findById(itemId).get(), bookingsForItem);
+            return toItemDtoWithBookings(itemFromDb, bookingsForItem);
         } else if (!commentsForItem.isEmpty()) {
-            return toItemDtoWithComments(itemRepository.findById(itemId).get(), commentsForItem);
+            return toItemDtoWithComments(itemFromDb, commentsForItem);
         } else {
-            return toItemDto(itemRepository.findById(itemId).get());
+            return toItemDto(itemFromDb);
         }
     }
 
     @Override
     public Collection<ItemDto> getItemsByUserId(long userId, Pageable page) {
+        log.debug("Getting items by user Id : {} ", userId);
+        validateUserId(userId, userRepository);
         Pageable pageForItems = PageRequest.of(page.getPageNumber(), page.getPageSize(), Sort.by(Sort.Direction.ASC, "id"));
         Pageable pageForComments = PageRequest.of(page.getPageNumber(), page.getPageSize(), Sort.by(Sort.Direction.DESC, "created"));
 
@@ -108,7 +119,6 @@ public class ItemServiceDbImpl implements ItemService {
                     .collect(Collectors.toList()));
         }
 
-        log.debug("Getting items by user Id : {} ", userId);
         List<ItemDto> results = new ArrayList<>();
         for (Item i : userItems) {
             results.add(toItemDtoWithBookingsAndComments(i, itemsWithBookingsMap.get(i), itemsWithCommentsMap.get(i)));
@@ -119,10 +129,10 @@ public class ItemServiceDbImpl implements ItemService {
 
     @Override
     public Collection<ItemDto> getItemsBySearch(String text, Pageable page) {
+        log.debug("Getting items by search : {} ", text);
         if (text.isEmpty()) {
             return new ArrayList<>();
         }
-        log.debug("Getting items by search : {} ", text);
         return itemRepository.search(text, page).stream()
                 .map(ItemMapper::toItemDto)
                 .collect(Collectors.toList());
@@ -130,7 +140,10 @@ public class ItemServiceDbImpl implements ItemService {
 
     @Override
     public ItemDto checkItemOwner(Long itemId, Long ownerId) {
-        ItemDto itemDto = toItemDto(itemRepository.findById(itemId).get());
+        log.debug("Checking item: {} owner", itemId);
+        Item itemFromDb = validateItemIdAndReturns(itemId, itemRepository);
+
+        ItemDto itemDto = toItemDto(itemFromDb);
         if (!Objects.equals(itemDto.getOwnerId(), ownerId)) {
             throw new EntityNotFoundException("User with id: " + ownerId + " is not owner");
         }
@@ -139,7 +152,10 @@ public class ItemServiceDbImpl implements ItemService {
 
     @Override
     public CommentDto addCommentToItem(Long userId, Long itemId, CommentDto commentDto) {
-        User author = userRepository.findById(userId).get();
+      log.debug("Adding a comment to itemId: {} by userId {}", itemId, userId);
+        User author = validateUserIdAndReturn(userId, userRepository);
+        validateItemId(itemId, itemRepository);
+        validateCommentData(commentDto);
         List<BookingDto> bookings = bookingRepository.findAllByUserIdAndItemIdAndEndDateIsPassed(userId, itemId, LocalDateTime.now())
                 .stream()
                 .map(BookingMapper::toBookingDto)
