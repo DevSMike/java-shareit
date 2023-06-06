@@ -25,7 +25,7 @@ class UserMapperTest {
                 .bookings(new ArrayList<>())
                 .items(List.of(Item.builder().id(1L).build()))
                 .build();
-        User userFromConstructor= new User(1L, "name", "mail@mail.ru", List.of(new Item()), List.of(new Booking()));
+        User userFromConstructor = new User(1L, "name", "mail@mail.ru", List.of(new Item()), List.of(new Booking()));
 
         UserDto userDto = UserMapper.toUserDto(user);
         UserDto userDtoConstructor = UserMapper.toUserDto(userFromConstructor);
