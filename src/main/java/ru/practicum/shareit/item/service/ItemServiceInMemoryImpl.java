@@ -8,7 +8,6 @@ import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.comment.CommentDto;
 import ru.practicum.shareit.item.dto.mapper.ItemMapper;
 import ru.practicum.shareit.item.repository.inmemmory.ItemRepository;
-import ru.practicum.shareit.user.service.UserService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -20,7 +19,6 @@ import static ru.practicum.shareit.item.dto.mapper.ItemMapper.*;
 @RequiredArgsConstructor
 public class ItemServiceInMemoryImpl implements ItemService {
 
-    private final UserService userService;
     private final ItemRepository itemRepository;
 
     @Override

@@ -7,13 +7,12 @@ import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.dto.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
+import ru.practicum.shareit.validator.UserValidator;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
 
 import static ru.practicum.shareit.user.dto.mapper.UserMapper.*;
-import static ru.practicum.shareit.validator.UserValidator.validateUserData;
-import static ru.practicum.shareit.validator.UserValidator.validateUserIdAndReturn;
 
 @Service
 @Slf4j
@@ -21,18 +20,19 @@ import static ru.practicum.shareit.validator.UserValidator.validateUserIdAndRetu
 public class UserServiceDbImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final UserValidator userValidator;
 
     @Override
     public UserDto create(UserDto userDto) {
         log.debug("Creating user : {}", userDto);
-        validateUserData(userDto);
+        userValidator.validateUserData(userDto);
         return toUserDto(userRepository.save(toUser(userDto)));
     }
 
     @Override
     public UserDto getById(long id) {
         log.debug("Getting user by Id: {}", id);
-        User userFromRep = validateUserIdAndReturn(id, userRepository);
+        User userFromRep = userValidator.validateUserIdAndReturn(id);
         return toUserDto(userFromRep);
     }
 
@@ -47,14 +47,14 @@ public class UserServiceDbImpl implements UserService {
     @Override
     public UserDto update(UserDto userDto) {
         log.debug("Updating user: {}", userDto);
-        User userToUpdate = toUserUpdate(userDto, validateUserIdAndReturn(userDto.getId(), userRepository));
+        User userToUpdate = toUserUpdate(userDto, userValidator.validateUserIdAndReturn(userDto.getId()));
         userRepository.save(userToUpdate);
         return toUserDto(userToUpdate);
     }
 
     @Override
     public void delete(long id) {
-        User userFromDb = validateUserIdAndReturn(id, userRepository);
+        User userFromDb = userValidator.validateUserIdAndReturn(id);
         log.debug("Deleting user by id: {}", id);
         userRepository.deleteById(userFromDb.getId());
     }

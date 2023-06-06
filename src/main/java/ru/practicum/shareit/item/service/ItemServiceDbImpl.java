@@ -22,7 +22,8 @@ import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.request.repository.ItemRequestRepository;
 import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.repository.UserRepository;
+import ru.practicum.shareit.validator.ItemValidator;
+import ru.practicum.shareit.validator.UserValidator;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -31,27 +32,25 @@ import java.util.stream.Collectors;
 import static ru.practicum.shareit.item.dto.comment.CommentMapper.toCommentDto;
 import static ru.practicum.shareit.item.dto.mapper.ItemMapper.*;
 import static ru.practicum.shareit.item.dto.mapper.ItemMapper.toItemDto;
-import static ru.practicum.shareit.validator.ItemValidator.*;
-import static ru.practicum.shareit.validator.UserValidator.validateUserId;
-import static ru.practicum.shareit.validator.UserValidator.validateUserIdAndReturn;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class ItemServiceDbImpl implements ItemService {
 
-    private final UserRepository userRepository;
     private final ItemRepository itemRepository;
     private final BookingRepository bookingRepository;
     private final CommentRepository commentRepository;
     private final ItemRequestRepository itemRequestRepository;
+    private final UserValidator userValidator;
+    private final ItemValidator itemValidator;
 
 
     @Override
     public ItemDto create(ItemDto itemDto, long userId) {
         log.debug("Creating item element : {}; for user {}", itemDto, userId);
-        validateItemData(itemDto);
-        User userFromDb = validateUserIdAndReturn(userId, userRepository);
+        itemValidator.validateItemData(itemDto);
+        User userFromDb = userValidator.validateUserIdAndReturn(userId);
         if (itemDto.getRequestId() != null) {
             ItemRequest request = itemRequestRepository.findById(itemDto.getRequestId())
                     .orElseThrow(() -> new EntityNotFoundException("There is no item request with id: " + itemDto.getRequestId()));
@@ -63,8 +62,8 @@ public class ItemServiceDbImpl implements ItemService {
     @Override
     public ItemDto update(ItemDto itemDto, long userId) {
         log.debug("Updating item element : {}; for user {}", itemDto, userId);
-        validateUserId(userId, userRepository);
-        Item itemToUpdate = toItemUpdate(itemDto, validateItemIdAndReturns(itemDto.getId(), itemRepository));
+        userValidator.validateUserId(userId);
+        Item itemToUpdate = toItemUpdate(itemDto, itemValidator.validateItemIdAndReturns(itemDto.getId()));
         itemRepository.save(itemToUpdate);
         return toItemDto(itemToUpdate);
     }
@@ -72,8 +71,8 @@ public class ItemServiceDbImpl implements ItemService {
     @Override
     public ItemDto getItemById(long itemId, long userId) {
         log.debug("Getting item by id: {}", itemId);
-        validateUserId(userId, userRepository);
-        Item itemFromDb = validateItemIdAndReturns(itemId, itemRepository);
+        userValidator.validateUserId(userId);
+        Item itemFromDb = itemValidator.validateItemIdAndReturns(itemId);
 
         List<CommentDto> commentsForItem = commentRepository.findAllByItem_Id(itemId)
                 .stream()
@@ -98,7 +97,7 @@ public class ItemServiceDbImpl implements ItemService {
     @Override
     public Collection<ItemDto> getItemsByUserId(long userId, Pageable page) {
         log.debug("Getting items by user Id : {} ", userId);
-        validateUserId(userId, userRepository);
+        userValidator.validateUserId(userId);
         Pageable pageForItems = PageRequest.of(page.getPageNumber(), page.getPageSize(), Sort.by(Sort.Direction.ASC, "id"));
         Pageable pageForComments = PageRequest.of(page.getPageNumber(), page.getPageSize(), Sort.by(Sort.Direction.DESC, "created"));
 
@@ -141,7 +140,7 @@ public class ItemServiceDbImpl implements ItemService {
     @Override
     public ItemDto checkItemOwner(Long itemId, Long ownerId) {
         log.debug("Checking item: {} owner", itemId);
-        Item itemFromDb = validateItemIdAndReturns(itemId, itemRepository);
+        Item itemFromDb = itemValidator.validateItemIdAndReturns(itemId);
 
         ItemDto itemDto = toItemDto(itemFromDb);
         if (!Objects.equals(itemDto.getOwnerId(), ownerId)) {
@@ -153,9 +152,9 @@ public class ItemServiceDbImpl implements ItemService {
     @Override
     public CommentDto addCommentToItem(Long userId, Long itemId, CommentDto commentDto) {
       log.debug("Adding a comment to itemId: {} by userId {}", itemId, userId);
-        User author = validateUserIdAndReturn(userId, userRepository);
-        validateItemId(itemId, itemRepository);
-        validateCommentData(commentDto);
+        User author = userValidator.validateUserIdAndReturn(userId);
+        itemValidator.validateItemId(itemId);
+        itemValidator.validateCommentData(commentDto);
         List<BookingDto> bookings = bookingRepository.findAllByUserIdAndItemIdAndEndDateIsPassed(userId, itemId, LocalDateTime.now())
                 .stream()
                 .map(BookingMapper::toBookingDto)

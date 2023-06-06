@@ -15,7 +15,9 @@ import ru.practicum.shareit.exception.IncorrectDataException;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.repository.UserRepository;
+import ru.practicum.shareit.validator.BookingValidator;
+import ru.practicum.shareit.validator.ItemValidator;
+import ru.practicum.shareit.validator.UserValidator;
 
 
 import java.time.LocalDateTime;
@@ -25,25 +27,22 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static ru.practicum.shareit.booking.dto.mapper.BookingMapper.*;
-import static ru.practicum.shareit.validator.BookingValidator.validateBookingIdAndReturns;
-import static ru.practicum.shareit.validator.BookingValidator.validateBookingState;
-import static ru.practicum.shareit.validator.ItemValidator.validateItemIdAndReturns;
-import static ru.practicum.shareit.validator.UserValidator.validateUserId;
-import static ru.practicum.shareit.validator.UserValidator.validateUserIdAndReturn;
 
 @Service
 @RequiredArgsConstructor
 public class BookingServiceImpl implements BookingService {
 
     private static final Sort SORT_BY_START_DESC = Sort.by("start").descending();
-    private final UserRepository userRepository;
     private final ItemRepository itemRepository;
     private final BookingRepository bookingRepository;
+    private final UserValidator userValidator;
+    private final ItemValidator itemValidator;
+    private final BookingValidator bookingValidator;
 
     @Override
     public BookingDto addBooking(BookingDto bookingDto, Long bookerId) {
-        User booker = validateUserIdAndReturn(bookerId, userRepository);
-        Item itemFromDb = validateItemIdAndReturns(bookingDto.getItemId(), itemRepository);
+        User booker = userValidator.validateUserIdAndReturn(bookerId);
+        Item itemFromDb = itemValidator.validateItemIdAndReturns(bookingDto.getItemId());
 
         if (itemFromDb.getOwner().getId() == bookerId) {
             throw new EntityNotFoundException("Owner can't book his item");
@@ -64,8 +63,8 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingDto approveBooking(Long bookingId, Long ownerId, String approve) {
-        validateUserId(ownerId, userRepository);
-        Booking bookingFromDb = validateBookingIdAndReturns(bookingId, bookingRepository);
+        userValidator.validateUserId(ownerId);
+        Booking bookingFromDb = bookingValidator.validateBookingIdAndReturns(bookingId);
 
         BookingDto bookingDto = toBookingDto(bookingFromDb);
         if (!Objects.equals(bookingDto.getItem().getOwnerId(), ownerId)) {
@@ -94,8 +93,8 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingDto getBookingInfo(Long bookingId, Long userId) {
-        validateUserId(userId, userRepository);
-        BookingDto bookingDto = toBookingDto(validateBookingIdAndReturns(bookingId, bookingRepository));
+        userValidator.validateUserId(userId);
+        BookingDto bookingDto = toBookingDto(bookingValidator.validateBookingIdAndReturns(bookingId));
         if (!Objects.equals(bookingDto.getItem().getOwnerId(), userId) && !Objects.equals(bookingDto.getBooker().getId(), userId)) {
             throw new EntityNotFoundException("User with id = " + userId + " is not an owner!");
         }
@@ -104,8 +103,8 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public List<BookingDto> getAllBookingsByUserId(Long userId, String state, Pageable page) {
-        validateUserId(userId, userRepository);
-        validateBookingState(state);
+        userValidator.validateUserId(userId);
+        bookingValidator.validateBookingState(state);
 
         Pageable pageForBookings = PageRequest.of(page.getPageNumber(), page.getPageSize(), SORT_BY_START_DESC);
         List<Booking> bookings;
@@ -142,8 +141,8 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public List<BookingDto> getAllBookingsByOwnerId(Long ownerId, String state, Pageable page) {
-        validateUserId(ownerId, userRepository);
-        validateBookingState(state);
+        userValidator.validateUserId(ownerId);
+        bookingValidator.validateBookingState(state);
         Pageable pageForBookings = PageRequest.of(page.getPageNumber(), page.getPageSize(), SORT_BY_START_DESC);
 
         List<Long> userItemsIds = itemRepository.findByOwner_Id_WithoutPageable(ownerId).stream()
