@@ -73,6 +73,7 @@ public class ItemMapper {
                 .request(request)
                 .build();
     }
+
     public static Item toItemUpdate(ItemDto itemDto, Item item) {
         return Item.builder()
                 .id(itemDto.getId())

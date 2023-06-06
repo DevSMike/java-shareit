@@ -29,7 +29,7 @@ public class Item {
     private User owner;
     @ManyToOne
     @JoinColumn(name = "request_id")
-    private ItemRequest request ;
+    private ItemRequest request;
 
     public Long ownerId() {
         return owner != null ? owner.getId() : null;
