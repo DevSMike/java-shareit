@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ItemMapperTest {
 
+    private static final LocalDateTime START_BOOKING_TIME = LocalDateTime.now();
     private Item item;
     private User owner;
     private ItemDto itemDto;
@@ -49,8 +50,8 @@ class ItemMapperTest {
                 .id(1L)
                 .build();
         bookingDto = BookingDto.builder()
-                .start(LocalDateTime.now())
-                .end(LocalDateTime.now().plusDays(1))
+                .start(START_BOOKING_TIME)
+                .end(START_BOOKING_TIME.plusDays(1))
                 .status(BookingStatus.WAITING)
                 .build();
     }

@@ -15,6 +15,7 @@ import ru.practicum.shareit.user.model.User;
 import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static ru.practicum.shareit.item.dto.mapper.ItemMapper.toItem;
 
 class BookingMapperTest {
 
@@ -83,6 +84,9 @@ class BookingMapperTest {
         assertEquals(actual.getEnd(), booking.getEnd());
         assertNotEquals(actual.getId(), 0);
         assertEquals(actual.getBooker().getId(), booker.getId());
+        assertEquals(actual.bookerId(), booker.getId());
+        assertEquals(actual.hashCode(), booking.hashCode());
+        assertEquals(actual.getItem(), toItem(bookingDto.getItem()));
     }
 
     @Test
