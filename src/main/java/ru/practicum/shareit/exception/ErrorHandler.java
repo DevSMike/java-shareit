@@ -40,4 +40,10 @@ public class ErrorHandler {
     public Map<String,String> handleUnsupportedStateException(UnsupportedStatusException e) {
         return Map.of("error",  "Unknown state: " + e.getMessage());
     }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public String handleUnsupportedMethodException(UnsupportedMethodException e) {
+        return String.format("Unsupported method: %s", e.getMessage());
+    }
 }

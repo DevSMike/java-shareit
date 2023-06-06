@@ -9,7 +9,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
 import ru.practicum.shareit.exception.EmptyFieldException;
+import ru.practicum.shareit.exception.UnsupportedMethodException;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.dto.comment.CommentDto;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.inmemmory.ItemRepositoryInMemoryImpl;
 import ru.practicum.shareit.item.service.ItemServiceInMemoryImpl;
@@ -110,11 +112,17 @@ class ItemServiceInMemoryImplTest {
 
     @Test
     void checkItemOwner() {
-        log.info("Method checkItemOwner not supported InMemory");
+        UnsupportedMethodException exception = assertThrows(UnsupportedMethodException.class,
+                () -> itemServiceInMemory.checkItemOwner(1L, 1L));
+
+        assertEquals(exception.getMessage(), "inMemory checkItemOwner");
     }
 
     @Test
     void addCommentToItem() {
-        log.info("Method addCommentToItem not supported InMemory");
+        UnsupportedMethodException exception = assertThrows(UnsupportedMethodException.class,
+                () -> itemServiceInMemory.addCommentToItem(1L, 1L, new CommentDto()));
+
+        assertEquals(exception.getMessage(), "inMemory addCommentToItem");
     }
 }
