@@ -7,11 +7,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.service.BookingService;
+import ru.practicum.shareit.validator.PageableValidator;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
-
-import static ru.practicum.shareit.validator.PageableValidator.checkingPageableParams;
 
 @RestController
 @RequestMapping(path = "/bookings")
@@ -19,17 +18,18 @@ import static ru.practicum.shareit.validator.PageableValidator.checkingPageableP
 @RequiredArgsConstructor
 public class BookingController {
     private final BookingService bookingService;
+    private final PageableValidator pageableValidator;
 
     @PostMapping
     public BookingDto createBooking(@RequestBody BookingDto bookingDto, HttpServletRequest request) {
         log.info("Creating a booking : {}", bookingDto);
-        return bookingService.addBooking(bookingDto, Long.valueOf(request.getHeader("X-Sharer-User-Id")));
+        return bookingService.addBooking(bookingDto, (long)(request.getIntHeader("X-Sharer-User-Id")));
     }
 
     @PatchMapping("/{bookingId}")
     public BookingDto approveBooking(@PathVariable Long bookingId, @RequestParam String approved, HttpServletRequest request) {
         log.info("Make approve status to booking: {}, status: {}", bookingId, approved);
-        return bookingService.approveBooking(bookingId, Long.valueOf(request.getHeader("X-Sharer-User-Id")), approved);
+        return bookingService.approveBooking(bookingId, (long)(request.getIntHeader("X-Sharer-User-Id")), approved);
     }
 
     @GetMapping
@@ -37,7 +37,7 @@ public class BookingController {
                                                   @RequestParam(defaultValue = "0") Integer from,
                                                   @RequestParam(defaultValue = "10") Integer size,
                                                   HttpServletRequest request) {
-        checkingPageableParams(from, size);
+        pageableValidator.checkingPageableParams(from, size);
         log.info("Getting info by user bookings");
         Pageable page = PageRequest.of(from / size, size);
         return bookingService.getAllBookingsByUserId((long) request.getIntHeader("X-Sharer-User-Id"), state, page);
@@ -48,7 +48,7 @@ public class BookingController {
                                                    @RequestParam(defaultValue = "0") Integer from,
                                                    @RequestParam(defaultValue = "10") Integer size,
                                                    HttpServletRequest request) {
-        checkingPageableParams(from, size);
+        pageableValidator.checkingPageableParams(from, size);
         log.info("Getting info by owner bookings");
         Pageable page = PageRequest.of(from / size, size);
         return bookingService.getAllBookingsByOwnerId((long) request.getIntHeader("X-Sharer-User-Id"), state, page);
@@ -57,6 +57,6 @@ public class BookingController {
     @GetMapping("/{bookingId}")
     public BookingDto getInfoForBooking(@PathVariable Long bookingId, HttpServletRequest request) {
         log.info("Getting info for booking: {}", bookingId);
-        return bookingService.getBookingInfo(bookingId, Long.valueOf(request.getHeader("X-Sharer-User-Id")));
+        return bookingService.getBookingInfo(bookingId, (long) request.getIntHeader("X-Sharer-User-Id"));
     }
 }

@@ -8,12 +8,11 @@ import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.request.dto.ItemRequestDto;
 import ru.practicum.shareit.request.service.ItemRequestService;
+import ru.practicum.shareit.validator.PageableValidator;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.Collection;
-
-import static ru.practicum.shareit.validator.PageableValidator.checkingPageableParams;
 
 @RestController
 @RequiredArgsConstructor
@@ -22,6 +21,7 @@ import static ru.practicum.shareit.validator.PageableValidator.checkingPageableP
 public class ItemRequestController {
 
     private final ItemRequestService itemRequestService;
+    private final PageableValidator pageableValidator;
 
 
     @PostMapping
@@ -39,7 +39,7 @@ public class ItemRequestController {
 
     @GetMapping("/all")
     public Collection<ItemRequestDto> getAllCreatedRequests(@RequestParam(defaultValue = "0") Integer from, @RequestParam(defaultValue = "10") Integer size, HttpServletRequest request) {
-        checkingPageableParams(from, size);
+        pageableValidator.checkingPageableParams(from, size);
         log.debug("Getting collection of created requests");
         Pageable page = PageRequest.of(from, size, Sort.by("creationDate").descending());
         return itemRequestService.getAllRequestsToResponse((long) request.getIntHeader("X-Sharer-User-Id"), page);
