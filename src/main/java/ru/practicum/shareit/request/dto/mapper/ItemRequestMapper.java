@@ -46,7 +46,7 @@ public class ItemRequestMapper {
         return requestDto;
     }
 
-    private static RequestItemDto makeResultItemDto(Item item) {
+    public static RequestItemDto makeResultItemDto(Item item) {
         return RequestItemDto.builder()
                 .name(item.getName())
                 .ownerId(item.ownerId())
