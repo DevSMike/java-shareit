@@ -50,6 +50,7 @@ class ItemRequestMapperTest {
                 .build();
         ItemRequest request = ItemRequest.builder()
                 .creationDate(LocalDateTime.now())
+                .requester(owner)
                 .id(1L)
                 .description("desc")
                 .responsesToRequest(List.of(item))
@@ -59,5 +60,8 @@ class ItemRequestMapperTest {
 
         assertEquals(actual.getDescription(), request.getDescription());
         assertEquals(actual.getItems().size(), 1);
+        assertEquals(actual.getRequester().getId(), owner.getId());
+        assertEquals(actual.getCreated(), request.getCreationDate());
+        assertEquals(actual.getId(), request.getId());
     }
 }

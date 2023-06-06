@@ -7,6 +7,7 @@ import ru.practicum.shareit.booking.dto.BookingLiteDto;
 import ru.practicum.shareit.booking.dto.mapper.BookingMapper;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.model.BookingStatus;
+import ru.practicum.shareit.item.dto.mapper.ItemMapper;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.dto.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
@@ -48,6 +49,9 @@ class BookingMapperTest {
                 .start(LocalDateTime.now())
                 .end(LocalDateTime.now().plusDays(2))
                 .status(BookingStatus.WAITING)
+                .item(ItemMapper.toItemDto(item))
+                .booker(UserMapper.toUserDto(booker))
+                .itemId(item.getId())
                 .build();
     }
 
@@ -75,6 +79,10 @@ class BookingMapperTest {
         Booking actual = BookingMapper.toBookingUpdate(bookingDto, booking);
 
         assertEquals(actual.getStatus(), bookingDto.getStatus());
+        assertEquals(actual.getStart(), booking.getStart());
+        assertEquals(actual.getEnd(), booking.getEnd());
+        assertNotEquals(actual.getId(), 0);
+        assertEquals(actual.getBooker().getId(), booker.getId());
     }
 
     @Test
@@ -82,5 +90,12 @@ class BookingMapperTest {
         BookingLiteDto actual = BookingMapper.toBookingLiteDto(bookingDto);
 
         assertEquals(actual.getStatus(), bookingDto.getStatus());
+        assertEquals(actual.getEnd(), bookingDto.getEnd());
+        assertEquals(actual.getStart(), bookingDto.getStart());
+        assertEquals(actual.getItem(), bookingDto.getItem());
+        assertNull(actual.getItemId());
+        assertEquals(actual.getBookerId(), bookingDto.getBooker().getId());
+        assertEquals(actual.getId(), bookingDto.getId());
+
     }
 }
