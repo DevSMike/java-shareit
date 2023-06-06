@@ -2,7 +2,6 @@ package ru.practicum.shareit.item.repository.inmemmory;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 import ru.practicum.shareit.exception.EntityNotFoundException;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.repository.inmemory.UserRepository;
@@ -11,7 +10,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-@Component
 @Slf4j
 @RequiredArgsConstructor
 public class ItemRepositoryInMemoryImpl implements ItemRepository {
