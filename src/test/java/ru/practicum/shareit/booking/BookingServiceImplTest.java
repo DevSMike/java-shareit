@@ -288,6 +288,96 @@ class BookingServiceImplTest {
     }
 
     @Test
+    void getAllBookingsByUserId_whenUserAndStateExistAndWaiting_thenReturnListOfBooking() {
+        doNothing().when(userValidator).validateUserId(anyLong());
+        doNothing().when(bookingValidator).validateBookingState(anyString());
+        when(bookingRepository.findAllByBookerIdAndWaitingStatus(anyLong(), any(), any(Pageable.class)))
+                .thenReturn(List.of(booking));
+
+        List<BookingDto> actualBookings = bookingService.getAllBookingsByUserId(1L, "WAITING", PAGE_FOR_BOOKINGS);
+
+        assertEquals(actualBookings.size(), 1);
+
+        verify(bookingRepository, times(0)).findAllByBookerIdAndCurrentStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByBookerIdAndFutureStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByBookerIdAndRejectedStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByBookerIdAndPastStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByBooker_Id(any(), any());
+    }
+
+    @Test
+    void getAllBookingsByUserId_whenUserAndStateExistAndFuture_thenReturnListOfBooking() {
+        doNothing().when(userValidator).validateUserId(anyLong());
+        doNothing().when(bookingValidator).validateBookingState(anyString());
+        when(bookingRepository.findAllByBookerIdAndFutureStatus(anyLong(), any(), any(Pageable.class)))
+                .thenReturn(List.of(booking));
+
+        List<BookingDto> actualBookings = bookingService.getAllBookingsByUserId(1L, "FUTURE", PAGE_FOR_BOOKINGS);
+
+        assertEquals(actualBookings.size(), 1);
+
+        verify(bookingRepository, times(0)).findAllByBookerIdAndCurrentStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByBookerIdAndWaitingStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByBookerIdAndRejectedStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByBookerIdAndPastStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByBooker_Id(any(), any());
+    }
+
+    @Test
+    void getAllBookingsByUserId_whenUserAndStateExistAndRejected_thenReturnListOfBooking() {
+        doNothing().when(userValidator).validateUserId(anyLong());
+        doNothing().when(bookingValidator).validateBookingState(anyString());
+        when(bookingRepository.findAllByBookerIdAndRejectedStatus(anyLong(), any(), any(Pageable.class)))
+                .thenReturn(List.of(booking));
+
+        List<BookingDto> actualBookings = bookingService.getAllBookingsByUserId(1L, "REJECTED", PAGE_FOR_BOOKINGS);
+
+        assertEquals(actualBookings.size(), 1);
+
+        verify(bookingRepository, times(0)).findAllByBookerIdAndCurrentStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByBookerIdAndWaitingStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByBookerIdAndFutureStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByBookerIdAndPastStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByBooker_Id(any(), any());
+    }
+
+    @Test
+    void getAllBookingsByUserId_whenUserAndStateExistAndPast_thenReturnListOfBooking() {
+        doNothing().when(userValidator).validateUserId(anyLong());
+        doNothing().when(bookingValidator).validateBookingState(anyString());
+        when(bookingRepository.findAllByBookerIdAndPastStatus(anyLong(), any(), any(Pageable.class)))
+                .thenReturn(List.of(booking));
+
+        List<BookingDto> actualBookings = bookingService.getAllBookingsByUserId(1L, "PAST", PAGE_FOR_BOOKINGS);
+
+        assertEquals(actualBookings.size(), 1);
+
+        verify(bookingRepository, times(0)).findAllByBookerIdAndCurrentStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByBookerIdAndWaitingStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByBookerIdAndFutureStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByBookerIdAndRejectedStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByBooker_Id(any(), any());
+    }
+
+    @Test
+    void getAllBookingsByUserId_whenUserAndStateExistAndAll_thenReturnListOfBooking() {
+        doNothing().when(userValidator).validateUserId(anyLong());
+        doNothing().when(bookingValidator).validateBookingState(anyString());
+        when(bookingRepository.findAllByBooker_Id(anyLong(), any()))
+                .thenReturn(List.of(booking));
+
+        List<BookingDto> actualBookings = bookingService.getAllBookingsByUserId(1L, "ALL", PAGE_FOR_BOOKINGS);
+
+        assertEquals(actualBookings.size(), 1);
+
+        verify(bookingRepository, times(0)).findAllByBookerIdAndCurrentStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByBookerIdAndWaitingStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByBookerIdAndFutureStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByBookerIdAndRejectedStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByBookerIdAndPastStatus(any(), any(), any());
+    }
+
+    @Test
     void getAllBookingsByUserId_whenUserNotExists_thenThrowEntityNotFoundException() {
         doThrow(new EntityNotFoundException("User not found")).when(userValidator).validateUserId(anyLong());
 
@@ -325,6 +415,96 @@ class BookingServiceImplTest {
         verify(bookingRepository, times(0)).findAllByOwnerItemsAndRejectedStatus(any(), any(), any());
         verify(bookingRepository, times(0)).findAllByOwnerItemsAndPastStatus(any(), any(), any());
         verify(bookingRepository, times(0)).findAllByOwnerItems(any(), any());
+    }
+
+    @Test
+    void getAllBookingsByOwnerId_whenUserAndBookingAndItemExistWaiting_thenReturnListOfBooking() {
+        doNothing().when(userValidator).validateUserId(anyLong());
+        doNothing().when(bookingValidator).validateBookingState(anyString());
+        when(itemRepository.findByOwner_Id_WithoutPageable(anyLong())).thenReturn(List.of(ownerItem));
+        when(bookingRepository.findAllByOwnerItemsAndWaitingStatus(anyList(), any(), any(Pageable.class)))
+                .thenReturn(List.of(booking));
+
+        List<BookingDto> actualBookings = bookingService.getAllBookingsByOwnerId(1L, "WAITING", PAGE_FOR_BOOKINGS);
+
+        assertEquals(actualBookings.size(), 1);
+        verify(bookingRepository, times(0)).findAllByOwnerItemsAndCurrentStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByOwnerItemsAndFutureStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByOwnerItemsAndRejectedStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByOwnerItemsAndPastStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByOwnerItems(any(), any());
+    }
+
+    @Test
+    void getAllBookingsByOwnerId_whenUserAndBookingAndItemExistFuture_thenReturnListOfBooking() {
+        doNothing().when(userValidator).validateUserId(anyLong());
+        doNothing().when(bookingValidator).validateBookingState(anyString());
+        when(itemRepository.findByOwner_Id_WithoutPageable(anyLong())).thenReturn(List.of(ownerItem));
+        when(bookingRepository.findAllByOwnerItemsAndFutureStatus(anyList(), any(), any(Pageable.class)))
+                .thenReturn(List.of(booking));
+
+        List<BookingDto> actualBookings = bookingService.getAllBookingsByOwnerId(1L, "FUTURE", PAGE_FOR_BOOKINGS);
+
+        assertEquals(actualBookings.size(), 1);
+        verify(bookingRepository, times(0)).findAllByOwnerItemsAndCurrentStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByOwnerItemsAndWaitingStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByOwnerItemsAndRejectedStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByOwnerItemsAndPastStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByOwnerItems(any(), any());
+    }
+
+    @Test
+    void getAllBookingsByOwnerId_whenUserAndBookingAndItemExistRejected_thenReturnListOfBooking() {
+        doNothing().when(userValidator).validateUserId(anyLong());
+        doNothing().when(bookingValidator).validateBookingState(anyString());
+        when(itemRepository.findByOwner_Id_WithoutPageable(anyLong())).thenReturn(List.of(ownerItem));
+        when(bookingRepository.findAllByOwnerItemsAndRejectedStatus(anyList(), any(), any(Pageable.class)))
+                .thenReturn(List.of(booking));
+
+        List<BookingDto> actualBookings = bookingService.getAllBookingsByOwnerId(1L, "REJECTED", PAGE_FOR_BOOKINGS);
+
+        assertEquals(actualBookings.size(), 1);
+        verify(bookingRepository, times(0)).findAllByOwnerItemsAndCurrentStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByOwnerItemsAndWaitingStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByOwnerItemsAndFutureStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByOwnerItemsAndPastStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByOwnerItems(any(), any());
+    }
+
+    @Test
+    void getAllBookingsByOwnerId_whenUserAndBookingAndItemExistPast_thenReturnListOfBooking() {
+        doNothing().when(userValidator).validateUserId(anyLong());
+        doNothing().when(bookingValidator).validateBookingState(anyString());
+        when(itemRepository.findByOwner_Id_WithoutPageable(anyLong())).thenReturn(List.of(ownerItem));
+        when(bookingRepository.findAllByOwnerItemsAndPastStatus(anyList(), any(), any(Pageable.class)))
+                .thenReturn(List.of(booking));
+
+        List<BookingDto> actualBookings = bookingService.getAllBookingsByOwnerId(1L, "PAST", PAGE_FOR_BOOKINGS);
+
+        assertEquals(actualBookings.size(), 1);
+        verify(bookingRepository, times(0)).findAllByOwnerItemsAndCurrentStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByOwnerItemsAndWaitingStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByOwnerItemsAndFutureStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByOwnerItemsAndRejectedStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByOwnerItems(any(), any());
+    }
+
+    @Test
+    void getAllBookingsByOwnerId_whenUserAndBookingAndItemExistAll_thenReturnListOfBooking() {
+        doNothing().when(userValidator).validateUserId(anyLong());
+        doNothing().when(bookingValidator).validateBookingState(anyString());
+        when(itemRepository.findByOwner_Id_WithoutPageable(anyLong())).thenReturn(List.of(ownerItem));
+        when(bookingRepository.findAllByOwnerItems(any(), any()))
+                .thenReturn(List.of(booking));
+
+        List<BookingDto> actualBookings = bookingService.getAllBookingsByOwnerId(1L, "ALL", PAGE_FOR_BOOKINGS);
+
+        assertEquals(actualBookings.size(), 1);
+        verify(bookingRepository, times(0)).findAllByOwnerItemsAndCurrentStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByOwnerItemsAndWaitingStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByOwnerItemsAndFutureStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByOwnerItemsAndRejectedStatus(any(), any(), any());
+        verify(bookingRepository, times(0)).findAllByOwnerItemsAndPastStatus(any(), any(), any());
     }
 
     @Test
