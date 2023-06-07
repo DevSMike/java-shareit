@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
 @ActiveProfiles("test")
-class ItemRepositoryIT {
+class ItemRepositoryTest {
 
     @Autowired
     ItemRepository itemRepository;

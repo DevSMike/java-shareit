@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
 @ActiveProfiles("test")
-class ItemRequestRepositoryIT {
+class ItemRequestRepositoryTest {
     private Long userOneId;
 
     @Autowired
