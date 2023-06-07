@@ -1,20 +1,13 @@
 package ru.practicum.shareit.exception;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ErrorHandlerTest {
 
-    private ErrorHandler errorHandler;
-
-    @BeforeEach
-    public void setUp() {
-        errorHandler = new ErrorHandler();
-    }
+    private final ErrorHandler errorHandler = new ErrorHandler();
 
     @Test
     public void testHandleUserNotFoundException() {
@@ -53,8 +46,12 @@ public class ErrorHandlerTest {
 
     @Test
     public void testHandleUnsupportedMethodException() {
-        UnsupportedMethodException exception = new UnsupportedMethodException("method");
+        UnsupportedMethodException exception = new UnsupportedMethodException("Unsupported method");
         String result = errorHandler.handleUnsupportedMethodException(exception);
-        assertEquals("Unsupported method: method", result);
+        assertEquals("Unsupported method: Unsupported method", result);
     }
 }
+
+
+
+
