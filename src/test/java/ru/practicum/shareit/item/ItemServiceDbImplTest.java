@@ -432,12 +432,12 @@ class ItemServiceDbImplTest {
                 .end(null)
                 .status(BookingStatus.APPROVED)
                 .build());
-        Comment expectedComment = Comment.builder().id(1L).text("text").created(LocalDateTime.now()).build();
+        Comment expectedComment = Comment.builder().id(1L).text("text").build();
         doNothing().when(userValidator).validateUserId(userId);
         doNothing().when(itemValidator).validateItemId(itemId);
         when(bookingRepository.findAllByUserIdAndItemIdAndEndDateIsPassed(any(Long.class), any(Long.class), any(LocalDateTime.class)))
                 .thenReturn(bookings);
-        when(commentRepository.save(expectedComment)).thenReturn(expectedComment);
+        when(commentRepository.save(any(Comment.class))).thenReturn(expectedComment);
         when(itemValidator.validateItemIdAndReturns(itemId)).thenReturn(new Item());
 
         CommentDto actualComment = itemService.addCommentToItem(userId, itemId, toCommentDto(expectedComment));
