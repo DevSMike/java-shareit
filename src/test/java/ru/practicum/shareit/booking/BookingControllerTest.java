@@ -7,9 +7,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.practicum.shareit.booking.dto.BookingDto;
+import ru.practicum.shareit.booking.model.BookingStatus;
 import ru.practicum.shareit.booking.service.BookingService;
 import ru.practicum.shareit.validator.PageableValidator;
 
@@ -56,7 +57,11 @@ class BookingControllerTest {
     void approveBooking() {
         BookingDto bookingToCreate = new BookingDto();
         bookingToCreate.setId(1L);
-        when(bookingService.approveBooking(anyLong(), anyLong(), anyString())).thenReturn(bookingToCreate);
+        BookingDto updatedBooking = BookingDto.builder()
+                .id(1L)
+                .status(BookingStatus.APPROVED)
+                .build();
+        when(bookingService.approveBooking(anyLong(), anyLong(), anyString())).thenReturn(updatedBooking);
 
         String result = mockMvc.perform(patch("/bookings/{bookingId}", bookingToCreate.getId())
                         .contentType("application/json")
@@ -67,7 +72,7 @@ class BookingControllerTest {
                 .getResponse()
                 .getContentAsString();
 
-        assertEquals(objectMapper.writeValueAsString(bookingToCreate), result);
+        assertEquals(objectMapper.writeValueAsString(updatedBooking), result);
     }
 
     @SneakyThrows
@@ -79,9 +84,9 @@ class BookingControllerTest {
                         .param("state", "ALL")
                         .header("X-Sharer-User-Id", "1"))
                 .andExpect(status().isOk());
-        doNothing().when(pageableValidator).checkingPageableParams(anyInt(), anyInt());
+        doNothing().when(pageableValidator).checkingPageableParams(1, 1);
 
-        verify(bookingService, times(1)).getAllBookingsByUserId(anyLong(), anyString(), any(Pageable.class));
+        verify(bookingService, times(1)).getAllBookingsByUserId(1L, "ALL", PageRequest.of(1, 1));
     }
 
     @SneakyThrows
@@ -93,9 +98,9 @@ class BookingControllerTest {
                         .param("state", "ALL")
                         .header("X-Sharer-User-Id", "1"))
                 .andExpect(status().isOk());
-        doNothing().when(pageableValidator).checkingPageableParams(anyInt(), anyInt());
+        doNothing().when(pageableValidator).checkingPageableParams(1, 1);
 
-        verify(bookingService, times(1)).getAllBookingsByOwnerId(anyLong(), anyString(), any(Pageable.class));
+        verify(bookingService, times(1)).getAllBookingsByOwnerId(1L, "ALL", PageRequest.of(1, 1));
     }
 
     @SneakyThrows

@@ -50,7 +50,6 @@ class ItemRequestControllerTest {
                 .getContentAsString();
 
         assertEquals(objectMapper.writeValueAsString(itemRequestToCreate), result);
-
     }
 
     @SneakyThrows

@@ -56,9 +56,13 @@ class ItemControllerTest {
     @SneakyThrows
     @Test
     void updateItem() {
-        ItemDto itemToCreate = new ItemDto();
-        itemToCreate.setId(1L);
-        when(itemService.update(any(ItemDto.class), anyLong())).thenReturn(itemToCreate);
+        ItemDto itemToCreate = ItemDto.builder()
+                .id(1L)
+                .build();
+        ItemDto itemToUpdate = ItemDto.builder()
+                .id(2L)
+                .build();
+        when(itemService.update(any(ItemDto.class), anyLong())).thenReturn(itemToUpdate);
 
         String result = mockMvc.perform(patch("/items/{itemId}", itemToCreate.getId())
                         .contentType("application/json")
@@ -68,7 +72,7 @@ class ItemControllerTest {
                 .getResponse()
                 .getContentAsString();
 
-        assertEquals(objectMapper.writeValueAsString(itemToCreate), result);
+        assertEquals(objectMapper.writeValueAsString(itemToUpdate), result);
     }
 
     @SneakyThrows
