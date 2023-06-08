@@ -5,12 +5,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import ru.practicum.shareit.request.model.ItemRequest;
 
-import java.util.Collection;
 import java.util.List;
 
 public interface ItemRequestRepository extends JpaRepository<ItemRequest, Long> {
 
-    Collection<ItemRequest> findAllByRequester_Id(Long requesterId);
+    List<ItemRequest> findAllByRequester_Id(Long requesterId);
 
     @Query("select ir from ItemRequest ir where ir.requester.id != :userId")
     List<ItemRequest> findAllByAllOtherUsers(Long userId, Pageable page);
