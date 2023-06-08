@@ -11,7 +11,6 @@ import ru.practicum.shareit.item.service.ItemService;
 import ru.practicum.shareit.validator.PageableValidator;
 
 import javax.servlet.http.HttpServletRequest;
-import java.time.LocalDateTime;
 import java.util.Collection;
 
 @RestController
@@ -61,7 +60,6 @@ public class ItemController {
     @PostMapping("/{itemId}/comment")
     public CommentDto createCommentToItem(@PathVariable Long itemId, @RequestBody CommentDto comment, HttpServletRequest request) {
         log.debug("Creating comment to item by userId {}", request.getIntHeader("X-Sharer-User-Id"));
-        comment.setCreated(LocalDateTime.now());
         return itemService.addCommentToItem((long) request.getIntHeader("X-Sharer-User-Id"), itemId, comment);
     }
 }

@@ -11,7 +11,6 @@ import ru.practicum.shareit.request.service.ItemRequestService;
 import ru.practicum.shareit.validator.PageableValidator;
 
 import javax.servlet.http.HttpServletRequest;
-import java.time.LocalDateTime;
 import java.util.Collection;
 
 @RestController
@@ -27,7 +26,6 @@ public class ItemRequestController {
     @PostMapping
     public ItemRequestDto addNewRequest(@RequestBody ItemRequestDto requestDto, HttpServletRequest request) {
         log.debug("Creating item request element {}", requestDto);
-        requestDto.setCreated(LocalDateTime.now());
         return itemRequestService.addNewRequest(requestDto, (long) request.getIntHeader("X-Sharer-User-Id"));
     }
 

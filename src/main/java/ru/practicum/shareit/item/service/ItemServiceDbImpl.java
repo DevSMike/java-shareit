@@ -155,6 +155,7 @@ public class ItemServiceDbImpl implements ItemService {
         User author = userValidator.validateUserIdAndReturn(userId);
         itemValidator.validateItemId(itemId);
         itemValidator.validateCommentData(commentDto);
+        commentDto.setCreated(LocalDateTime.now());
         List<BookingDto> bookings = bookingRepository.findAllByUserIdAndItemIdAndEndDateIsPassed(userId, itemId, LocalDateTime.now())
                 .stream()
                 .map(BookingMapper::toBookingDto)

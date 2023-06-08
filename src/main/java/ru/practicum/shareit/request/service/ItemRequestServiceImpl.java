@@ -11,6 +11,7 @@ import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.validator.ItemRequestValidator;
 import ru.practicum.shareit.validator.UserValidator;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
@@ -27,6 +28,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     @Override
     public ItemRequestDto addNewRequest(ItemRequestDto requestDto, Long userId) {
         User requester = userValidator.validateUserIdAndReturn(userId);
+        requestDto.setCreated(LocalDateTime.now());
         itemRequestValidator.validateItemRequestData(requestDto);
         return toItemRequestDto(itemRequestRepository.save(toItemRequest(requestDto, requester)));
     }
