@@ -9,6 +9,7 @@ import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.comment.CommentDto;
 import ru.practicum.shareit.item.service.ItemService;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 @RestController
@@ -48,6 +49,9 @@ public class ItemController {
     @GetMapping("/search")
     public Collection<ItemDto> getItemsBySearch(@RequestParam(defaultValue = "0") Integer from, @RequestParam(defaultValue = "10") Integer size, @RequestParam String text) {
         log.debug("Getting items by search text: {}", text);
+        if (text.isBlank()) {
+            return new ArrayList<>();
+        }
         Pageable page = PageRequest.of(from / size, size);
         return itemService.getItemsBySearch(text, page);
     }
