@@ -16,18 +16,26 @@ services:
     ports:
       - "9090:9090"
     depends_on:
-    - db
+      - db
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/shareit
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=4315
+      - TZ=Europe/Moscow
 
   db:
     image: postgres:13.7-alpine
     container_name: db
     ports:
       - "6541:5432"
+    volumes:
+      - ./database:/docker-entrypoint-initdb.d
     environment:
       - POSTGRES_DB=shareit
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=4315
+    healthcheck:
+      test: pg_isready -U postgres -d shareit
+      interval: 10s
+      timeout: 5s
+      retries: 5
